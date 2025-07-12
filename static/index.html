@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FRC Video Referee</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1>FRC Video Referee</h1>
+        <p>Video analysis and referee assistance for FRC competitions</p>
+    </header>
+    
+    <main>
+        <div class="container">
+            <div class="card">
+                <h2>Welcome to FRC Video Referee</h2>
+                <p>This is a placeholder page. The frontend will be implemented using SvelteKit.</p>
+                
+                <div class="status">
+                    <h3>Server Status</h3>
+                    <div id="status-indicator" class="status-indicator">
+                        <span class="dot"></span>
+                        <span id="status-text">Connecting...</span>
+                    </div>
+                </div>
+                
+                <div class="websocket-demo">
+                    <h3>WebSocket Demo</h3>
+                    <div id="messages"></div>
+                    <div class="input-group">
+                        <input type="text" id="messageInput" placeholder="Enter a message...">
+                        <button onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer>
+        <p>&copy; 2025 FRC Video Referee - Development Version</p>
+    </footer>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>
