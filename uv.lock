@@ -79,7 +79,6 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
-    { name = "pyperdeck" },
     { name = "uvicorn" },
     { name = "websockets" },
 ]
@@ -87,7 +86,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", specifier = ">=0.116.1" },
-    { name = "pyperdeck", specifier = ">=0.0.1" },
     { name = "uvicorn", specifier = ">=0.32.1" },
     { name = "websockets", specifier = ">=15.0.1" },
 ]
@@ -210,14 +208,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b8/e9/1f7efbe20d0b2b10f6718944b5d8ece9152390904f29a78e68d4e7961159/pydantic_core-2.33.2-pp311-pypy311_pp73-musllinux_1_1_armv7l.whl", hash = "sha256:de4b83bb311557e439b9e186f733f6c645b9417c84e2eb8203f3f820a4b988bf", size = 2239013, upload-time = "2025-04-23T18:33:26.621Z" },
     { url = "https://files.pythonhosted.org/packages/3c/b2/5309c905a93811524a49b4e031e9851a6b00ff0fb668794472ea7746b448/pydantic_core-2.33.2-pp311-pypy311_pp73-musllinux_1_1_x86_64.whl", hash = "sha256:82f68293f055f51b51ea42fafc74b6aad03e70e191799430b90c13d643059ebb", size = 2238715, upload-time = "2025-04-23T18:33:28.656Z" },
     { url = "https://files.pythonhosted.org/packages/32/56/8a7ca5d2cd2cda1d245d34b1c9a942920a718082ae8e54e5f3e5a58b7add/pydantic_core-2.33.2-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:329467cecfb529c925cf2bbd4d60d2c509bc2fb52a20c1045bf09bb70971a9c1", size = 2066757, upload-time = "2025-04-23T18:33:30.645Z" },
-]
-
-[[package]]
-name = "pyperdeck"
-version = "0.0.1"
-source = { registry = "https://pypi.org/simple" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/08/59/74d23ac25658987371571f17dd7df311805dd6fc4b7f95d8d35bc19275dc/pyperdeck-0.0.1-py3-none-any.whl", hash = "sha256:1b1968ad964d559af59e9984b7a446739cd3cac63c3bc637bef1b97e65f0ea87", size = 11221, upload-time = "2022-01-11T04:07:12.738Z" },
 ]
 
 [[package]]
