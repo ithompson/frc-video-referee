@@ -141,6 +141,17 @@ class CheesyArenaClient:
             ),
         }
 
+        self._subscribers: Dict[ArenaNotifier, List[Callable[[], Awaitable[None]]]] = {
+            notifier: [] for notifier in ArenaNotifier
+        }
+        """Subscribers for various arena state changes"""
+
+    def subscribe(
+        self, notifier: ArenaNotifier, callback: Callable[[], Awaitable[None]]
+    ):
+        """Subscribe to a specific arena state change."""
+        self._subscribers[notifier].append(callback)
+
     @property
     def connected(self) -> bool:
         """Whether or not the client is currently connected to Cheesy Arena."""
@@ -258,10 +269,13 @@ class CheesyArenaClient:
 
     async def _notify(self, notifier: ArenaNotifier):
         """Notify subscribers about a state change."""
-        # This is a placeholder for the actual notification logic.
-        # In a real implementation, you would call the appropriate
-        # methods to notify subscribers of the state change.
+
         logger.debug(f"Notification: {notifier.name}")
+        for callback in self._subscribers[notifier]:
+            try:
+                await callback()
+            except Exception as e:
+                logger.exception(f"Error notifying subscriber for {notifier.name}: {e}")
 
     async def _handle_cheesy_message(self, raw_message: bytes):
         """Handle a message received from Cheesy Arena."""

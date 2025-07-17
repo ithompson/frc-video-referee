@@ -8,7 +8,9 @@ import logging
 from pydantic_settings import BaseSettings, SettingsConfigDict, TomlConfigSettingsSource
 from pathlib import Path
 
+from .controller import VARController, VARSettings
 from .cheesy_arena.client import CheesyArenaClient, ArenaClientSettings
+from .hyperdeck.client import HyperdeckClient, HyperdeckClientSettings
 from .server import ServerSettings, run as run_server
 from .utils import ExitServer
 
@@ -45,6 +47,12 @@ class Settings(BaseSettings, use_attribute_docstrings=True):
     server: ServerSettings = ServerSettings()
     """Web server settings"""
 
+    hyperdeck: HyperdeckClientSettings = HyperdeckClientSettings()
+    """HyperDeck client settings"""
+
+    var: VARSettings = VARSettings()
+    """VAR controller settings"""
+
     debug: bool = False
     """Enable verbose debug logging"""
 
@@ -74,10 +82,14 @@ class Settings(BaseSettings, use_attribute_docstrings=True):
 async def async_main(settings: Settings) -> None:
     """Main loop for the FRC Video Referee application."""
     arena = CheesyArenaClient(settings.arena)
+    hyperdeck = HyperdeckClient(settings.hyperdeck)
+    controller = VARController(settings.var, arena, hyperdeck)
 
     try:
         async with asyncio.TaskGroup() as tg:
             tg.create_task(arena.run())
+            tg.create_task(hyperdeck.run())
+            tg.create_task(controller.run())
             tg.create_task(run_server(settings.server))
     except* ExitServer:
         pass
