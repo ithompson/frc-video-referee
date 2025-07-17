@@ -3,17 +3,28 @@ FastAPI server for FRC Video Referee application.
 """
 
 from pathlib import Path
+import logging
 
 from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import uvicorn
+from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 # Simple password-based authentication
 security = HTTPBasic()
 ADMIN_USERNAME = "admin"
 ADMIN_PASSWORD = "password"  # TODO: Move to environment variable
+
+
+class ServerSettings(BaseModel, use_attribute_docstrings=True):
+    """Settings for the web server."""
+
+    host: str = "0.0.0.0"
+    port: int = 8000
 
 
 def get_current_user(credentials: HTTPBasicCredentials = Depends(security)):
@@ -115,20 +126,12 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 
-def create_app() -> FastAPI:
-    """Create and configure the FastAPI application."""
-    return app
-
-
-def run_server(host: str = "127.0.0.1", port: int = 8000, reload: bool = False):
+async def run(settings: ServerSettings) -> None:
     """Run the FastAPI server."""
-    uvicorn.run(
+    config = uvicorn.Config(
         "frc_video_referee.server:app",
-        host=host,
-        port=port,
-        reload=reload,
+        host=settings.host,
+        port=settings.port,
     )
-
-
-if __name__ == "__main__":
-    run_server(reload=True)
+    server = uvicorn.Server(config)
+    await server.serve()

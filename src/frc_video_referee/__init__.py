@@ -3,29 +3,101 @@ FRC Video Referee - Video analysis and referee assistance for FRC competitions.
 """
 
 import argparse
-import sys
+import asyncio
+import logging
+from pydantic_settings import BaseSettings, SettingsConfigDict, TomlConfigSettingsSource
+from pathlib import Path
+
+from .cheesy_arena.client import CheesyArenaClient, ArenaClientSettings
+from .server import ServerSettings, run as run_server
+from .utils import ExitServer
+
+
+def get_config_path() -> Path | None:
+    """Get the configuration file path from command line arguments."""
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument(
+        "--config",
+        type=Path,
+    )
+    args, _ = parser.parse_known_args()
+    return args.config
+
+
+class Settings(BaseSettings, use_attribute_docstrings=True):
+    """Application settings for FRC Video Referee."""
+
+    model_config = SettingsConfigDict(
+        env_prefix="FRC_VAR_",
+        cli_parse_args=True,
+        cli_implicit_flags=True,
+        cli_kebab_case=True,
+        cli_hide_none_type=True,
+        cli_avoid_json=True,
+    )
+
+    config: Path | None = None
+    """Path to an optional configuration TOML file"""
+
+    arena: ArenaClientSettings = ArenaClientSettings()
+    """Cheesy Arena client settings"""
+
+    server: ServerSettings = ServerSettings()
+    """Web server settings"""
+
+    debug: bool = False
+    """Enable verbose debug logging"""
+
+    # Customize the settings sources to include an optional CLI-specified TOML file
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls,
+        init_settings,
+        env_settings,
+        dotenv_settings,
+        file_secret_settings,
+    ):
+        sources = super().settings_customise_sources(
+            settings_cls,
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+        )
+        config_path = get_config_path()
+        if config_path:
+            sources += (TomlConfigSettingsSource(settings_cls, config_path),)
+        return sources
+
+
+async def async_main(settings: Settings) -> None:
+    """Main loop for the FRC Video Referee application."""
+    arena = CheesyArenaClient(settings.arena)
+
+    try:
+        async with asyncio.TaskGroup() as tg:
+            tg.create_task(arena.run())
+            tg.create_task(run_server(settings.server))
+    except* ExitServer:
+        pass
 
 
 def main() -> None:
-    """Main entry point for the FRC Video Referee application."""
-    parser = argparse.ArgumentParser(description="FRC Video Referee Server")
-    parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
-    parser.add_argument("--port", type=int, default=8000, help="Port to bind to")
-    parser.add_argument(
-        "--reload", action="store_true", help="Enable auto-reload for development"
+    """
+    Main application entrypoint
+
+    Parses command line arguments, sets up logging, and then enters the async runtime
+    """
+
+    settings = Settings()
+
+    logging.basicConfig(
+        level=logging.DEBUG if settings.debug else logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
-    args = parser.parse_args()
-
     try:
-        from .server import run_server
-
-        print(f"Starting FRC Video Referee server on {args.host}:{args.port}")
-        run_server(host=args.host, port=args.port, reload=args.reload)
-    except ImportError as e:
-        print(f"Error importing server: {e}")
-        print("Please install the required dependencies with: uv sync")
-        sys.exit(1)
+        asyncio.run(async_main(settings))
     except KeyboardInterrupt:
-        print("\nShutting down server...")
-        sys.exit(0)
+        pass
