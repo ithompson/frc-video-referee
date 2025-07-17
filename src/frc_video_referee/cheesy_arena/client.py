@@ -37,6 +37,8 @@ class ArenaClientSettings(BaseModel, use_attribute_docstrings=True):
     """Cheesy Arena server address"""
     password: str | None = None
     """Password for arena APIs requiring authentication"""
+    compat_mode: bool = False
+    """Whether to use legacy arena APIs with no specific VAR support"""
 
 
 class UnexpectedStatusCode(Exception):
@@ -180,8 +182,17 @@ class CheesyArenaClient:
         else:
             additional_headers = {}
 
+        if self._settings.compat_mode:
+            websocket_endpoint = (
+                f"ws://{self._settings.address}/panels/referee/websocket"
+            )
+        else:
+            websocket_endpoint = (
+                f"ws://{self._settings.address}/video_referee/websocket"
+            )
+
         async with websockets.connect(
-            f"ws://{self._settings.address}/panels/referee/websocket",
+            websocket_endpoint,
             additional_headers=additional_headers,
         ) as websocket:
             logger.info("Cheesy Arena connection established")
