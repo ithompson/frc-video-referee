@@ -1,0 +1,69 @@
+from datetime import datetime
+from enum import Enum
+from typing import List
+from pydantic import BaseModel
+
+
+class ArenaClientState(BaseModel):
+    """Data structure storing persistent Cheesy Arena client state"""
+
+    session_token: str | None = None
+    """Session token for authenticated requests to the arena"""
+
+
+class MatchEventType(Enum):
+    """The overall type of an event captured for review"""
+
+    AUTO_SCORING = "auto_scoring"
+    """The moment where AUTO period scores are evaluated"""
+    ENDGAME_SCORING = "endgame_scoring"
+    """The moment where end-of-game scores are evaluated"""
+    VAR_REVIEW = "var_review"
+    """A moment requested for review by the VAR"""
+    HR_REVIEW = "hr_review"
+    """A moment requested for review by the Head Referee"""
+    ROBOT_DISCONNECT = "robot_disconnect"
+    """A robot disconnecting during the match"""
+
+
+class EventCoordinates(BaseModel):
+    """Coordinates for an event on the field"""
+
+    x: float
+    """X coordinate in the range 0..1"""
+    y: float
+    """Y coordinate in the range 0..1"""
+
+
+class MatchEvent(BaseModel):
+    """Record of a review-worthy event during a match"""
+
+    event_type: MatchEventType
+    """Type of the event"""
+    time: float
+    """Time in seconds from the start of the match when the event occurred"""
+    team_id: str | None = None
+    """Team ID associated with the event, if applicable"""
+    description: str | None = None
+    """Optional brief description of the event, e.g. 'Damaging contact' or 'Multiple fouls'"""
+    coordinates: EventCoordinates | None = None
+    """Optional coordinates for the event on the field, if applicable"""
+
+
+class RecordedMatch(BaseModel):
+    """Data structure storing a recorded match"""
+
+    var_id: str
+    """VAR server-assigned unique identifier for the match"""
+    arena_id: str
+    """Unique identifier for the match"""
+    play_number: int
+    """Play number of the match, used to differentiate multiple plays in a single match"""
+    clip_id: str | None = None
+    """Hyperdeck-assigned identifier for the recorded video clip"""
+    clip_file_name: str
+    """Our chosen filename for the clip on the HyperDeck"""
+    timestamp: datetime
+    """Timestamp of the start of the match"""
+    events: List[MatchEvent] = []
+    """List of events during the match that the user can warp to"""

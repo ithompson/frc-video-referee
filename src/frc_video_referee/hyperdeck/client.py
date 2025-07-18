@@ -1,13 +1,14 @@
 import asyncio
+import enum
 import logging
-from typing import Dict
+from typing import Awaitable, Callable, Dict, List
 import httpx
 from pydantic import BaseModel
 import websockets
 
 from frc_video_referee.hyperdeck.model import (
+    PLACEHOLDER_PLAYBACK_STATE,
     Clip,
-    ClipIndex,
     ClipList,
     ClipResponse,
     EventMessage,
@@ -15,7 +16,6 @@ from frc_video_referee.hyperdeck.model import (
     PlaybackState,
     PlaybackType,
     RecordRequest,
-    RecordingState,
     RequestMessage,
     ResponseMessage,
     SubscribeRequest,
@@ -34,6 +34,19 @@ class HyperdeckClientSettings(BaseModel):
     address: str = "localhost:8001"
 
 
+class HyperdeckNotifier(enum.Enum):
+    """Notifiers that can be subscribed by the rest of the system"""
+
+    CONNECTION_STATE_UPDATED = enum.auto()
+    """Connection state to the HyperDeck has changed"""
+    TRANSPORT_MODE_UPDATED = enum.auto()
+    """Transport mode of the HyperDeck has changed"""
+    PLAYBACK_STATE_UPDATED = enum.auto()
+    """Playback state of the HyperDeck has changed"""
+    CLIP_LIST_UPDATED = enum.auto()
+    """The list of playable clips on the HyperDeck has updated"""
+
+
 class HyperdeckClient:
     def __init__(self, settings: HyperdeckClientSettings):
         self._settings = settings
@@ -41,6 +54,42 @@ class HyperdeckClient:
         """Dictionary mapping clip IDs to Clip objects"""
         self._timeline: Dict[int, TimelineClip] = {}
         """Dictionary mapping clip IDs to their timeline representation"""
+        self._connected = False
+        """Whether the client is currently connected to the HyperDeck"""
+
+        self.playback_state = PLACEHOLDER_PLAYBACK_STATE
+        """Current playback state"""
+        self.transport_mode = TransportMode.InputPreview
+        """Current transport mode"""
+
+        self._subscribers: Dict[
+            HyperdeckNotifier, List[Callable[[], Awaitable[None]]]
+        ] = {notifier: [] for notifier in HyperdeckNotifier}
+        """Subscribers for various arena state changes"""
+
+    def subscribe(
+        self, notifier: HyperdeckNotifier, callback: Callable[[], Awaitable[None]]
+    ):
+        """Subscribe to a specific HyperDeck state change."""
+        self._subscribers[notifier].append(callback)
+
+    @property
+    def connected(self) -> bool:
+        """True if the client is connected to the HyperDeck, False otherwise"""
+        return self._connected
+
+    @property
+    def recording(self) -> bool:
+        """True if a recording is currently in progress, False otherwise"""
+        return self.transport_mode == TransportMode.InputRecord
+
+    def has_playable_clip(self, clip_id: int) -> bool:
+        """Check if a clip with the given ID exists in the HyperDeck and is available for playback."""
+        return clip_id in self._clips and clip_id in self._timeline
+
+    def get_clip(self, clip_id: int) -> Clip | None:
+        """Get a Clip object by its ID."""
+        return self._clips.get(clip_id)
 
     async def run(self) -> None:
         """Run the Hyperdeck client."""
@@ -76,8 +125,6 @@ class HyperdeckClient:
                     data=SubscribeRequest(
                         properties=[
                             "/transports/0/playback",
-                            "/transports/0/record",
-                            "/transports/0/clipIndex",
                             "/transports/0",
                             "/timelines/0",
                         ]
@@ -115,17 +162,20 @@ class HyperdeckClient:
         """Handle property changes received from the HyperDeck WebSocket."""
         match property:
             case "/transports/0/playback":
-                playback_state = PlaybackState.model_validate(value)
-            case "/transports/0/record":
-                recording_state = RecordingState.model_validate(value)
-            case "/transports/0/clipIndex":
-                index = ClipIndex.model_validate(value)
+                self.playback_state = PlaybackState.model_validate(value)
+                await self._notify(HyperdeckNotifier.PLAYBACK_STATE_UPDATED)
             case "/transports/0":
                 mode = TransportModeRequest.model_validate(value)
+                self.transport_mode = mode.mode
+                await self._notify(HyperdeckNotifier.TRANSPORT_MODE_UPDATED)
             case "/timelines/0":
                 # Update our view of the timeline structure
                 timeline = TimelineClipList.model_validate(value)
+                old_timeline_keys = set(self._timeline.keys())
                 self._timeline = {clip.clipUniqueId: clip for clip in timeline.clips}
+                new_timeline_keys = set(self._timeline.keys())
+                if old_timeline_keys != new_timeline_keys:
+                    await self._notify(HyperdeckNotifier.CLIP_LIST_UPDATED)
 
     async def _get_full_clip_list(self, client: httpx.AsyncClient) -> None:
         """Fetch the full list of clips from the HyperDeck."""
@@ -133,7 +183,13 @@ class HyperdeckClient:
         response.raise_for_status()
         clip_list = ClipList.model_validate_json(response.text)
         logger.info(f"Retrieved {len(clip_list.clips)} clips from HyperDeck")
+
+        old_clip_keys = set(self._clips.keys())
         self._clips = {clip.clipUniqueId: clip for clip in clip_list.clips}
+        new_clip_keys = set(self._clips.keys())
+
+        if old_clip_keys != new_clip_keys:
+            await self._notify(HyperdeckNotifier.CLIP_LIST_UPDATED)
 
     async def start_recording(self, clip_name: str | None = None) -> int:
         """Start recording a new clip and return the ID in the HyperDeck"""
@@ -150,6 +206,7 @@ class HyperdeckClient:
         clip_data = ClipResponse.model_validate_json(response.text)
         assert clip_data.clip is not None, "Clip data should not be None"
         self._clips[clip_data.clip.clipUniqueId] = clip_data.clip
+        await self._notify(HyperdeckNotifier.CLIP_LIST_UPDATED)
 
         logger.info(
             f"Started recording clip: {clip_name} with ID {clip_data.clip.clipUniqueId}"
@@ -218,3 +275,11 @@ class HyperdeckClient:
             "/transports/0", content=request.model_dump_json()
         )
         response.raise_for_status()
+
+    async def _notify(self, notifier: HyperdeckNotifier):
+        """Notify subscribers of a state change."""
+        for callback in self._subscribers[notifier]:
+            try:
+                await callback()
+            except Exception as e:
+                logger.error(f"Error notifying subscriber for {notifier.name}: {e}")

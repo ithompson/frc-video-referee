@@ -8,10 +8,11 @@ import logging
 from pydantic_settings import BaseSettings, SettingsConfigDict, TomlConfigSettingsSource
 from pathlib import Path
 
+from .db import DB, DBSettings
 from .controller import VARController, VARSettings
 from .cheesy_arena.client import CheesyArenaClient, ArenaClientSettings
 from .hyperdeck.client import HyperdeckClient, HyperdeckClientSettings
-from .server import ServerSettings, run as run_server
+from .web import ServerSettings, run as run_server
 from .utils import ExitServer
 
 
@@ -43,6 +44,9 @@ class Settings(BaseSettings, use_attribute_docstrings=True):
 
     arena: ArenaClientSettings = ArenaClientSettings()
     """Cheesy Arena client settings"""
+
+    db: DBSettings = DBSettings()
+    """Database settings"""
 
     server: ServerSettings = ServerSettings()
     """Web server settings"""
@@ -81,7 +85,8 @@ class Settings(BaseSettings, use_attribute_docstrings=True):
 
 async def async_main(settings: Settings) -> None:
     """Main loop for the FRC Video Referee application."""
-    arena = CheesyArenaClient(settings.arena)
+    db = DB(settings.db)
+    arena = CheesyArenaClient(settings.arena, db)
     hyperdeck = HyperdeckClient(settings.hyperdeck)
     controller = VARController(settings.var, arena, hyperdeck)
 

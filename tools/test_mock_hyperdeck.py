@@ -38,7 +38,7 @@ class HyperDeckClient:
         response = requests.put(f"{self.api_base}/transports/0", json={"mode": mode})
         response.raise_for_status()
 
-    def start_recording(self, clip_name: str = None) -> None:
+    def start_recording(self, clip_name: str | None = None) -> None:
         """Start recording."""
         data = {}
         if clip_name:

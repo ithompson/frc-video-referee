@@ -7,6 +7,9 @@ import websockets
 import logging
 from pydantic import BaseModel, ValidationError
 
+from frc_video_referee.db import DB
+from frc_video_referee.db.model import ArenaClientState
+
 from .model import (
     PLACEHOLDER_ARENA_STATUS_MESSAGE,
     MatchLoadMessage,
@@ -92,11 +95,14 @@ class ArenaMessageHandler(NamedTuple, Generic[T]):
 class CheesyArenaClient:
     """Client for interacting with Cheesy Arena."""
 
-    def __init__(self, settings: ArenaClientSettings):
+    def __init__(self, settings: ArenaClientSettings, db: DB):
         self._settings = settings
         """User-specified settings for the Cheesy Arena client"""
-        self._session_token = None
-        """Session token for authenticated requests"""
+        self._db = db
+        """Database instance for storing arena state"""
+        self._persistent_state = (
+            self._db.load_arena_client_state() or ArenaClientState()
+        )
         self._connected = False
         """Whether or not the client is currently connected to Cheesy Arena"""
 
@@ -165,6 +171,9 @@ class CheesyArenaClient:
             logger.info("Starting Cheesy Arena client")
             self._client = client
 
+            if self._persistent_state.session_token:
+                client.cookies["session_token"] = self._persistent_state.session_token
+
             while True:
                 try:
                     await self._run_internal(client)
@@ -188,16 +197,21 @@ class CheesyArenaClient:
                 raise ExitServer
             await self._acquire_session(client)
 
-        if self._session_token:
-            additional_headers = {"Cookie": f"session_token={self._session_token}"}
+        if self._persistent_state.session_token:
+            additional_headers = {
+                "Cookie": f"session_token={self._persistent_state.session_token}"
+            }
         else:
             additional_headers = {}
 
         if self._settings.compat_mode:
+            # Baseline endpoint available in unmodified Cheesy Arena
             websocket_endpoint = (
                 f"ws://{self._settings.address}/panels/referee/websocket"
             )
         else:
+            # VAR-specific endpoint in the VAR branch of Cheesy Arena, adds additional
+            # arena configuration and readiness reports
             websocket_endpoint = (
                 f"ws://{self._settings.address}/video_referee/websocket"
             )
@@ -236,8 +250,9 @@ class CheesyArenaClient:
         formdata = {"username": "admin", "password": self._settings.password}
         response = await client.post("/login", data=formdata, follow_redirects=False)
         if response.status_code == 303:
-            self._session_token = response.cookies["session_token"]
-            client.cookies["session_token"] = self._session_token
+            self._persistent_state.session_token = response.cookies["session_token"]
+            client.cookies["session_token"] = self._persistent_state.session_token
+            self._db.save_arena_client_state(self._persistent_state)
         elif response.status_code == 200:
             # Incorrect password
             logger.error(

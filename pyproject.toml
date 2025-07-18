@@ -22,4 +22,4 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/frc_video_referee"]
-force-include = { "static" = "frc_video_referee/static" }
+force-include = { "static" = "frc_video_referee/web/static" }

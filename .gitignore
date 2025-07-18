@@ -1,3 +1,7 @@
+# VAR server configuration and data files
+config.toml
+var.db/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

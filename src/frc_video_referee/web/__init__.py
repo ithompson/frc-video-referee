@@ -41,7 +41,7 @@ def get_current_user(credentials: HTTPBasicCredentials = Depends(security)):
 def get_static_directory() -> Path:
     """Get the static directory for serving assets."""
     # For development, serve from workspace static folder
-    dev_static = Path(__file__).parent.parent.parent / "static"
+    dev_static = Path(__file__).parent.parent.parent.parent / "static"
     if dev_static.exists():
         return dev_static
 
@@ -129,7 +129,7 @@ async def websocket_endpoint(websocket: WebSocket):
 async def run(settings: ServerSettings) -> None:
     """Run the FastAPI server."""
     config = uvicorn.Config(
-        "frc_video_referee.server:app",
+        "frc_video_referee.web:app",
         host=settings.host,
         port=settings.port,
     )

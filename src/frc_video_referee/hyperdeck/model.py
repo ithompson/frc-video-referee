@@ -56,6 +56,15 @@ class PlaybackState(BaseModel):
     """Playback position on the timeline in units of frames. 0 is the first frame of the timeline"""
 
 
+PLACEHOLDER_PLAYBACK_STATE = PlaybackState(
+    type=PlaybackType.Jog,
+    loop=False,
+    singleClip=True,
+    speed=1.0,
+    position=0,
+)
+
+
 class CodecFormat(BaseModel):
     """Codec format for a recorded clip"""
 
