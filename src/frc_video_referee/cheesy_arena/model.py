@@ -42,6 +42,8 @@ class MatchStatus(IntEnum):
 class Match(BaseArenaModel):
     """Schedule data for a match"""
 
+    id: Annotated[int, Field(alias="Id")]
+    """Internal arena ID for the match"""
     match_type: Annotated[MatchType, Field(alias="Type")]
     """Type of the match, e.g., qualification, playoff, etc."""
     type_order: Annotated[int, Field(alias="TypeOrder")]
@@ -260,6 +262,7 @@ class MatchLoadMessage(BaseArenaModel):
 
 PLACEHOLDER_MATCH_LOAD_MESSAGE = MatchLoadMessage(
     match_info=Match(
+        id=0,
         match_type=MatchType.TEST,
         type_order=0,
         long_name="Test Match",

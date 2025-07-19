@@ -88,13 +88,13 @@ async def async_main(settings: Settings) -> None:
     db = DB(settings.db)
     arena = CheesyArenaClient(settings.arena, db)
     hyperdeck = HyperdeckClient(settings.hyperdeck)
-    controller = VARController(settings.var, arena, hyperdeck)
+
+    _controller = VARController(settings.var, arena, hyperdeck, db)
 
     try:
         async with asyncio.TaskGroup() as tg:
             tg.create_task(arena.run())
             tg.create_task(hyperdeck.run())
-            tg.create_task(controller.run())
             tg.create_task(run_server(settings.server))
     except* ExitServer:
         pass

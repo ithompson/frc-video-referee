@@ -55,11 +55,9 @@ class RecordedMatch(BaseModel):
 
     var_id: str
     """VAR server-assigned unique identifier for the match"""
-    arena_id: str
+    arena_id: int
     """Unique identifier for the match"""
-    play_number: int
-    """Play number of the match, used to differentiate multiple plays in a single match"""
-    clip_id: str | None = None
+    clip_id: int | None = None
     """Hyperdeck-assigned identifier for the recorded video clip"""
     clip_file_name: str
     """Our chosen filename for the clip on the HyperDeck"""

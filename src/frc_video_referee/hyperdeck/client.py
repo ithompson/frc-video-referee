@@ -263,7 +263,7 @@ class HyperdeckClient:
             speed=1.0,
             position=timeline_position,
         )
-        response = await self._client.post(
+        response = await self._client.put(
             "/transports/0/playback", content=request.model_dump_json()
         )
         response.raise_for_status()
