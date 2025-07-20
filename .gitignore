@@ -2,6 +2,11 @@
 config.toml
 var.db/
 
+# Frontend build artifacts
+node_modules/
+dist/
+py_dist/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -18,7 +23,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+#lib/
 lib64/
 parts/
 sdist/

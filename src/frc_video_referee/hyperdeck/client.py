@@ -117,6 +117,7 @@ class HyperdeckClient:
         ) as websocket:
             logger.info("HyperDeck connection established")
             self._connected = True
+            await self._notify(HyperdeckNotifier.CONNECTION_STATE_UPDATED)
 
             try:
                 await self._get_full_clip_list(client)
@@ -157,6 +158,7 @@ class HyperdeckClient:
             finally:
                 self._connected = False
                 logger.info("HyperDeck connection closed")
+                await self._notify(HyperdeckNotifier.CONNECTION_STATE_UPDATED)
 
     async def _handle_property_change(self, property: str, value: dict) -> None:
         """Handle property changes received from the HyperDeck WebSocket."""

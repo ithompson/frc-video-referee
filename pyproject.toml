@@ -17,9 +17,14 @@ dependencies = [
 frc-video-referee = "frc_video_referee:main"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-build-scripts"]
 build-backend = "hatchling.build"
+
+[[tool.hatch.build.targets.wheel.hooks.build-scripts.scripts]]
+work_dir = "frontend"
+commands = ["bun install", "bun run build --outDir py_dist"]
+artifacts = ["py_dist/*"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/frc_video_referee"]
-force-include = { "static" = "frc_video_referee/web/static" }
+force-include = { "frontend/py_dist" = "frc_video_referee/web/static" }

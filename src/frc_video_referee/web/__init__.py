@@ -69,7 +69,7 @@ class WebsocketManager:
             try:
                 await subscriber.send_text(event_text)
             except WebSocketDisconnect:
-                notifier.subscribers.remove(subscriber)
+                notifier.subscribers.discard(subscriber)
 
     async def serve_client(self, websocket: WebSocket):
         """Serve a WebSocket client connection."""
@@ -89,6 +89,9 @@ class WebsocketManager:
                     case WebsocketSubscribeRequest():
                         # Request to subscribe to one or more event types
                         event_types = msg.event_types
+                        logger.debug(
+                            f"Processing subscription request for: {event_types}"
+                        )
 
                         initial_data = {}
                         for event_type in event_types:
@@ -100,13 +103,12 @@ class WebsocketManager:
                                 )
                                 continue
                             initial_data[event_type] = notifier.emitter()
+                            notifier.subscribers.add(websocket)
+                            subscriptions.add(event_type)
 
-                        new_event_types = set(event_types) - subscriptions
-                        for event_type in new_event_types:
-                            if event_type in self._notifiers:
-                                self._notifiers[event_type].subscribers.add(websocket)
-                                subscriptions.add(event_type)
-
+                        logger.debug(
+                            f"Responding to subscription request for: {event_types} with values for {list(initial_data.keys())}"
+                        )
                         response = WebsocketSubscribeResponse(
                             initial_data=initial_data,
                             request_id=msg.request_id,
@@ -121,7 +123,7 @@ class WebsocketManager:
                         for event_type in event_types:
                             if event_type in subscriptions:
                                 subscriptions.remove(event_type)
-                                self._notifiers[event_type].subscribers.remove(
+                                self._notifiers[event_type].subscribers.discard(
                                     websocket
                                 )
                         response = WebsocketUnsubscribeResponse(
@@ -134,7 +136,7 @@ class WebsocketManager:
         finally:
             logger.info(f"WebSocket client 0x{id(websocket):x} disconnected")
             for event_type in subscriptions:
-                self._notifiers[event_type].subscribers.remove(websocket)
+                self._notifiers[event_type].subscribers.discard(websocket)
 
 
 WEBSOCKET_MANAGER = WebsocketManager()
@@ -166,7 +168,7 @@ def get_current_user(credentials: HTTPBasicCredentials = Depends(security)):
 def get_static_directory() -> Path:
     """Get the static directory for serving assets."""
     # For development, serve from workspace static folder
-    dev_static = Path(__file__).parent.parent.parent.parent / "static"
+    dev_static = Path(__file__).parent.parent.parent.parent / "frontend/dist"
     if dev_static.exists():
         return dev_static
 
@@ -178,7 +180,7 @@ def get_static_directory() -> Path:
     # If neither exists, raise an error
     raise RuntimeError(
         "Static assets directory not found. "
-        "For development, ensure 'static/' directory exists in workspace. "
+        "For development, ensure 'bun run build' has been run from the frontend directory. "
         "For installed package, static assets should be embedded."
     )
 
@@ -192,7 +194,7 @@ app = FastAPI(
 
 # Set up static files
 static_dir = get_static_directory()
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
+app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
 
 
 @app.get("/", response_class=HTMLResponse)
