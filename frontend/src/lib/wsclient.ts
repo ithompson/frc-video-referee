@@ -36,6 +36,7 @@ function handle_event(type: WebsocketEventType, data: any) {
 
 function connect(address: string, subscriptions: WebsocketEventType[] = []) {
     const full_address = `ws://${address}/api/websocket`
+    console.log('Connecting to WebSocket at:', full_address)
     const ws = new WebSocket(full_address)
 
     ws.onopen = () => {
