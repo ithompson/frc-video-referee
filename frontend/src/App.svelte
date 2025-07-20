@@ -4,6 +4,13 @@
   import Counter from "./lib/Counter.svelte";
   import { server_state } from "./lib/server_state.svelte";
   import { MatchState } from "./lib/model";
+  import type WebSocketClient from "./lib/wsclient.svelte";
+
+  interface Props {
+    ws: WebSocketClient;
+  }
+
+  let { ws }: Props = $props();
 </script>
 
 <main>
@@ -24,9 +31,7 @@
   <div class="card">
     <h2>Server State</h2>
     <p>
-      Server connection: {server_state.server_connected
-        ? "Connected"
-        : "Disconnected"}
+      Server connection: {ws.state.connected ? "Connected" : "Disconnected"}
     </p>
     <p>
       Arena connection: {server_state.arena_connected

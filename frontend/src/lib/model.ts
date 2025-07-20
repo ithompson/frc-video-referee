@@ -182,3 +182,14 @@ export enum WebsocketEventType {
     HyperdeckTransportMode = "hyperdeck_transport_mode",
     HyperdeckPlaybackState = "hyperdeck_playback_state",
 }
+
+export interface WebsocketEvent {
+    type: 'event';
+    event_type: string;
+    data: any;
+}
+
+export interface WebsocketSubscribeResponse {
+    type: 'subscribe';
+    initial_data: Partial<Record<string, any>>;
+}
