@@ -20,7 +20,7 @@ class WebSocketClient {
     connect() {
         try {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws`;
+            const wsUrl = `${protocol}//${window.location.host}/api/websocket`;
             
             this.socket = new WebSocket(wsUrl);
             
@@ -52,6 +52,20 @@ class WebSocketClient {
         this.reconnectAttempts = 0;
         this.updateStatus('connected', 'Connected');
         this.addMessage('Connected to server', 'system');
+        var subscribe_request = {
+            "type": "subscribe",
+            "event_types": [
+                "current_match_data",
+                "current_match_time",
+                "realtime_score",
+                "match_list",
+                "arena_connection",
+                "hyperdeck_connection",
+                "hyperdeck_transport_mode",
+                "hyperdeck_playback",
+            ]
+        }
+        this.socket.send(JSON.stringify(subscribe_request));
     }
     
     onMessage(event) {
@@ -117,16 +131,16 @@ class WebSocketClient {
         }
     }
     
-    sendMessage(message) {
-        if (this.isConnected && this.socket) {
-            this.socket.send(message);
-            this.addMessage(message, 'sent');
-            return true;
-        } else {
-            this.addMessage('Cannot send message: not connected', 'system');
-            return false;
-        }
-    }
+    //sendMessage(message) {
+    //    if (this.isConnected && this.socket) {
+    //        this.socket.send(message);
+    //        this.addMessage(message, 'sent');
+    //        return true;
+    //    } else {
+    //        this.addMessage('Cannot send message: not connected', 'system');
+    //        return false;
+    //    }
+    //}
     
     setupEventListeners() {
         // Enter key to send message
@@ -167,9 +181,9 @@ function sendMessage() {
     const message = messageInput.value.trim();
     
     if (message) {
-        if (window.wsClient.sendMessage(message)) {
-            messageInput.value = '';
-        }
+        //if (window.wsClient.sendMessage(message)) {
+        //    messageInput.value = '';
+        //}
     }
 }
 

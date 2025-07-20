@@ -270,8 +270,8 @@ class HyperdeckClient:
 
     async def show_live_view(self) -> None:
         """Show the live view from the HyperDeck."""
-        request = TransportModeRequest(mode=TransportMode.Output)
-        response = await self._client.post(
+        request = TransportModeRequest(mode=TransportMode.InputPreview)
+        response = await self._client.put(
             "/transports/0", content=request.model_dump_json()
         )
         response.raise_for_status()

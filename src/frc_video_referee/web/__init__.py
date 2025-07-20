@@ -2,17 +2,142 @@
 FastAPI server for FRC Video Referee application.
 """
 
+from copy import copy
 from pathlib import Path
 import logging
+from typing import Callable, Dict, NamedTuple, Set
 
 from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import uvicorn
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+
+from frc_video_referee.web.model import (
+    InboundWebsocketMessage,
+    WebsocketEvent,
+    WebsocketSubscribeRequest,
+    WebsocketSubscribeResponse,
+    WebsocketUnsubscribeRequest,
+    WebsocketUnsubscribeResponse,
+)
 
 logger = logging.getLogger(__name__)
+
+
+class WebsocketManager:
+    class Notifier(NamedTuple):
+        event_type: str
+        emitter: Callable[[], Dict]
+        subscribers: Set[WebSocket] = set()
+
+    def __init__(self):
+        self._notifiers: Dict[str, WebsocketManager.Notifier] = {}
+
+    def add_event_type(self, event_type: str, emitter: Callable[[], Dict]):
+        """Add a notification type to the manager."""
+        assert event_type not in self._notifiers, (
+            f"Event type '{event_type}' already exists."
+        )
+        self._notifiers[event_type] = WebsocketManager.Notifier(
+            event_type=event_type, emitter=emitter
+        )
+        logger.debug(f"Registering event type: {event_type}")
+
+    async def notify(self, event_type: str, data: Dict | None = None):
+        """Notify all subscribers of a specific event type."""
+        try:
+            notifier = self._notifiers[event_type]
+        except KeyError:
+            logger.warning(f"Event type '{event_type}' not found.")
+            return
+
+        if data is None:
+            # Get the current state from the emitter function
+            data = notifier.emitter()
+
+        subscribers = copy(notifier.subscribers)
+        logger.debug(f"Notifying {len(subscribers)} subscribers of {event_type}")
+
+        event = WebsocketEvent(
+            event_type=event_type,
+            data=data,
+        )
+        event_text = event.model_dump_json(exclude_none=True)
+        for subscriber in subscribers:
+            try:
+                await subscriber.send_text(event_text)
+            except WebSocketDisconnect:
+                notifier.subscribers.remove(subscriber)
+
+    async def serve_client(self, websocket: WebSocket):
+        """Serve a WebSocket client connection."""
+        await websocket.accept()
+        logger.info(f"WebSocket client 0x{id(websocket):x} connected")
+        subscriptions = set()
+        try:
+            async for message in websocket.iter_text():
+                try:
+                    msg = InboundWebsocketMessage.validate_json(message)
+                    logger.debug(f"Received message: {msg}")
+                except ValidationError as e:
+                    logger.error(f"Invalid WebSocket message: {e}")
+                    continue
+
+                match msg:
+                    case WebsocketSubscribeRequest():
+                        # Request to subscribe to one or more event types
+                        event_types = msg.event_types
+
+                        initial_data = {}
+                        for event_type in event_types:
+                            try:
+                                notifier = self._notifiers[event_type]
+                            except KeyError:
+                                logger.warning(
+                                    f"Unknown event type '{event_type}' in subscription request"
+                                )
+                                continue
+                            initial_data[event_type] = notifier.emitter()
+
+                        new_event_types = set(event_types) - subscriptions
+                        for event_type in new_event_types:
+                            if event_type in self._notifiers:
+                                self._notifiers[event_type].subscribers.add(websocket)
+                                subscriptions.add(event_type)
+
+                        response = WebsocketSubscribeResponse(
+                            initial_data=initial_data,
+                            request_id=msg.request_id,
+                        )
+                        await websocket.send_text(
+                            response.model_dump_json(exclude_none=True)
+                        )
+
+                    case WebsocketUnsubscribeRequest():
+                        # Request to drop one or more subscriptions
+                        event_types = msg.event_types
+                        for event_type in event_types:
+                            if event_type in subscriptions:
+                                subscriptions.remove(event_type)
+                                self._notifiers[event_type].subscribers.remove(
+                                    websocket
+                                )
+                        response = WebsocketUnsubscribeResponse(
+                            unsubscribed_event_types=list(subscriptions),
+                            request_id=msg.request_id,
+                        )
+                        await websocket.send_text(
+                            response.model_dump_json(exclude_none=True)
+                        )
+        finally:
+            logger.info(f"WebSocket client 0x{id(websocket):x} disconnected")
+            for event_type in subscriptions:
+                self._notifiers[event_type].subscribers.remove(websocket)
+
+
+WEBSOCKET_MANAGER = WebsocketManager()
 
 # Simple password-based authentication
 security = HTTPBasic()
@@ -70,30 +195,6 @@ static_dir = get_static_directory()
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
-class ConnectionManager:
-    """Manages WebSocket connections."""
-
-    def __init__(self):
-        self.active_connections: list[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def send_personal_message(self, message: str, websocket: WebSocket):
-        await websocket.send_text(message)
-
-    async def broadcast(self, message: str):
-        for connection in self.active_connections:
-            await connection.send_text(message)
-
-
-manager = ConnectionManager()
-
-
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     """Serve the main application page."""
@@ -107,23 +208,10 @@ async def get_status(current_user: str = Depends(get_current_user)):
     return {"status": "running", "user": current_user}
 
 
-@app.websocket("/ws")
+@app.websocket("/api/websocket")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time updates."""
-    await manager.connect(websocket)
-    try:
-        while True:
-            # Wait for messages from client
-            data = await websocket.receive_text()
-
-            # Echo the message back (placeholder functionality)
-            await manager.send_personal_message(f"Echo: {data}", websocket)
-
-            # Broadcast to all connected clients
-            await manager.broadcast(f"Broadcast: {data}")
-
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+    await WEBSOCKET_MANAGER.serve_client(websocket)
 
 
 async def run(settings: ServerSettings) -> None:

@@ -8,8 +8,19 @@ from frc_video_referee import db
 from frc_video_referee.db.model import MatchEvent, MatchEventType, RecordedMatch
 from frc_video_referee.hyperdeck.client import HyperdeckClient, HyperdeckNotifier
 from frc_video_referee.cheesy_arena.client import ArenaNotifier, CheesyArenaClient
+from frc_video_referee.web import WebsocketManager
 
 logger = logging.getLogger(__name__)
+
+# Event names used on the websocket interface
+CURRENT_MATCH_DATA_EVENT = "current_match_data"
+CURRENT_MATCH_TIME_EVENT = "current_match_time"
+REALTIME_SCORE_EVENT = "realtime_score"
+MATCH_LIST_EVENT = "match_list"
+ARENA_CONNECTION_EVENT = "arena_connection"
+HYPERDECK_CONNECTION_EVENT = "hyperdeck_connection"
+HYPERDECK_TRANSPORT_MODE_EVENT = "hyperdeck_transport_mode"
+HYPERDECK_PLAYBACK_EVENT = "hyperdeck_playback"
 
 
 class VARSettings(BaseModel):
@@ -47,11 +58,13 @@ class VARController:
         settings: VARSettings,
         arena: CheesyArenaClient,
         hyperdeck: HyperdeckClient,
+        websocket: WebsocketManager,
         db: db.DB,
     ):
         self._settings = settings
         self._arena = arena
         self._hyperdeck = hyperdeck
+        self._websocket = websocket
         self._db = db
 
         self._lock = asyncio.Lock()
@@ -114,6 +127,29 @@ class VARController:
         for event, handler in hyperdeck_subscriptions:
             self._hyperdeck.subscribe(event, handler)
 
+        self._websocket.add_event_type(
+            CURRENT_MATCH_TIME_EVENT,
+            lambda: self._arena.match_time.model_dump(),
+        )
+        self._websocket.add_event_type(
+            REALTIME_SCORE_EVENT,
+            lambda: self._arena.realtime_score.model_dump(),
+        )
+        self._websocket.add_event_type(
+            ARENA_CONNECTION_EVENT, lambda: {"connected": self._arena.connected}
+        )
+        self._websocket.add_event_type(
+            HYPERDECK_CONNECTION_EVENT, lambda: {"connected": self._hyperdeck.connected}
+        )
+        self._websocket.add_event_type(
+            HYPERDECK_TRANSPORT_MODE_EVENT,
+            lambda: {"transport_mode": self._hyperdeck.transport_mode.name},
+        )
+        self._websocket.add_event_type(
+            HYPERDECK_PLAYBACK_EVENT,
+            lambda: self._hyperdeck.playback_state.model_dump(),
+        )
+
     #########################################
     # Helpers for managing controller state #
     #########################################
@@ -159,6 +195,7 @@ class VARController:
             self._matches[self._current_match.var_id] = self._current_match
             self._db.save_match(self._current_match)
             self._current_match = None
+            await self._hyperdeck.show_live_view()
 
     def _add_match_event(self, event: MatchEvent):
         """Add an event to the current match."""
@@ -282,8 +319,7 @@ class VARController:
 
     async def _handle_arena_connection_state_update(self):
         """Handle a notification that the arena connection state has changed"""
-        # TODO: propagate update to the UI
-        pass
+        await self._websocket.notify(ARENA_CONNECTION_EVENT)
 
     async def _handle_historical_scores_update(self):
         """Handle a notification that the historical scores have changed"""
@@ -292,8 +328,7 @@ class VARController:
 
     async def _handle_realtime_score_update(self):
         """Handle a notification that the realtime score has changed"""
-        # TODO: propagate update to the UI
-        pass
+        await self._websocket.notify(REALTIME_SCORE_EVENT)
 
     async def _handle_match_data_update(self):
         """Handle a notification that the match data has changed"""
@@ -302,8 +337,7 @@ class VARController:
 
     async def _handle_match_time_update(self):
         """Handle a notification that the match time has changed"""
-        # TODO: propagate update to the UI
-        pass
+        await self._websocket.notify(CURRENT_MATCH_TIME_EVENT)
 
     ###################################################
     # Handlers for hyperdeck-related UI data changing #
@@ -311,18 +345,15 @@ class VARController:
 
     async def _handle_hyperdeck_connection_state_update(self):
         """Handle a notification that the HyperDeck connection state has changed"""
-        # TODO: propagate update to the UI
-        pass
+        await self._websocket.notify(HYPERDECK_CONNECTION_EVENT)
 
     async def _handle_hyperdeck_transport_mode_update(self):
         """Handle a notification that the HyperDeck transport mode has changed"""
-        # TODO: propagate update to the UI
-        pass
+        await self._websocket.notify(HYPERDECK_TRANSPORT_MODE_EVENT)
 
     async def _handle_hyperdeck_playback_state_update(self):
         """Handle a notification that the HyperDeck playback state has changed"""
-        # TODO: propagate update to the UI
-        pass
+        await self._websocket.notify(HYPERDECK_PLAYBACK_EVENT)
 
     async def _handle_hyperdeck_clip_list_update(self):
         """Handle a notification that the HyperDeck clip list has changed"""
