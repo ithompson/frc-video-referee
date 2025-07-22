@@ -66,6 +66,9 @@ export default class WebSocketClient {
                         callback(data);
                     }
                 }
+            } else if (msg.type === 'reload') {
+                console.log('Server requested reload');
+                window.location.reload();
             }
         }
 

@@ -1,10 +1,14 @@
 <script lang="ts">
-  import svelteLogo from "./assets/svelte.svg";
-  import viteLogo from "/assets/vite.svg";
-  import Counter from "./lib/Counter.svelte";
   import { server_state } from "./lib/server_state.svelte";
-  import { MatchState } from "./lib/model";
   import type WebSocketClient from "./lib/wsclient.svelte";
+  import StatusHeader from "./var_panel/StatusHeader.svelte";
+  import MatchListEntry from "./var_panel/MatchListEntry.svelte";
+  import EventListEntry from "./var_panel/EventListEntry.svelte";
+  import Timeline from "./var_panel/Timeline.svelte";
+  import VerticalList from "./var_panel/VerticalList.svelte";
+  import FieldMap from "./var_panel/FieldMap.svelte";
+  import EventData from "./var_panel/EventData.svelte";
+  import ScoreData from "./var_panel/ScoreData.svelte";
 
   interface Props {
     ws: WebSocketClient;
@@ -13,69 +17,109 @@
   let { ws }: Props = $props();
 </script>
 
-<main>
-  <div>
-    <a href="https://vite.dev" target="_blank" rel="noreferrer">
-      <img src={viteLogo} class="logo" alt="Vite Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank" rel="noreferrer">
-      <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-    </a>
-  </div>
-  <h1>Vite + Svelte</h1>
+<div class="top-container">
+  <StatusHeader
+    arena_connected={server_state.arena_connected}
+    hyperdeck_connected={server_state.hyperdeck_connected}
+    match_name={"Qualification 5"}
+    match_time_sec={server_state.match_time?.match_time_sec || 0}
+    playback_state={server_state.hyperdeck_playback_state}
+  />
 
-  <div class="card">
-    <Counter />
-  </div>
-
-  <div class="card">
-    <h2>Server State</h2>
-    <p>
-      Server connection: {ws.state.connected ? "Connected" : "Disconnected"}
-    </p>
-    <p>
-      Arena connection: {server_state.arena_connected
-        ? "Connected"
-        : "Disconnected"}
-    </p>
-    <p>
-      Hyperdeck connection: {server_state.hyperdeck_connected
-        ? "Connected"
-        : "Disconnected"}
-    </p>
-    <p>
-      Match phase: {server_state.match_time?.match_state !== undefined
-        ? MatchState[server_state.match_time.match_state]
-        : "Unknown"}
-    </p>
-    <p>Match time: {server_state.match_time?.match_time_sec} seconds</p>
-  </div>
-
-  <p>
-    Check out <a
-      href="https://github.com/sveltejs/kit#readme"
-      target="_blank"
-      rel="noreferrer">SvelteKit</a
-    >, the official Svelte app framework powered by Vite!
-  </p>
-
-  <p class="read-the-docs">Click on the Vite and Svelte logos to learn more</p>
-</main>
+  <main>
+    <div class="match-ui-container">
+      <div class="scoring-container">
+        <ScoreData />
+      </div>
+      <div class="event-info-container">
+        <div class="field-map-container">
+          <FieldMap />
+        </div>
+        <div class="event-data-container">
+          <EventData />
+        </div>
+      </div>
+      <div class="timeline-container">
+        <Timeline />
+      </div>
+    </div>
+    <div class="events list-container">
+      <button class="add-event">Add Event</button>
+      <VerticalList>
+        {#snippet item()}
+          <EventListEntry />
+        {/snippet}
+      </VerticalList>
+    </div>
+    <div class="matches list-container">
+      <button class="go-live">Go Live</button>
+      <VerticalList>
+        {#snippet item()}
+          <MatchListEntry />
+        {/snippet}
+      </VerticalList>
+    </div>
+  </main>
+</div>
 
 <style>
-  .logo {
-    height: 6em;
-    padding: 1.5em;
-    will-change: filter;
-    transition: filter 300ms;
+  @import "./lib/base_colors.css";
+
+  :global(html) {
+    height: 100%;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+    overscroll-behavior: none;
   }
-  .logo:hover {
-    filter: drop-shadow(0 0 2em #646cffaa);
+
+  :global(body) {
+    height: 100%;
+    margin: 0;
+    touch-action: manipulation;
   }
-  .logo.svelte:hover {
-    filter: drop-shadow(0 0 2em #ff3e00aa);
+
+  .top-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
-  .read-the-docs {
-    color: #888;
+
+  main {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    padding-bottom: 20px; /* Spacer for the iOS home bar */
+  }
+
+  .match-ui-container {
+    flex: 1 1 0%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scoring-container {
+    width: 100%;
+    flex: 1 1 0%;
+    background-color: var(--gray-400);
+  }
+
+  .event-info-container {
+    display: flex;
+    flex-direction: row;
+
+    & div {
+      flex: 1 1 0%;
+      padding: 10px;
+    }
+  }
+
+  .list-container {
+    height: 100%;
+    overflow: hidden;
   }
 </style>

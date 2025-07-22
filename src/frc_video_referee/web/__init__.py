@@ -34,6 +34,7 @@ class WebsocketManager:
 
     def __init__(self):
         self._notifiers: Dict[str, WebsocketManager.Notifier] = {}
+        self._clients: Set[WebSocket] = set()
 
     def add_event_type(self, event_type: str, emitter: Callable[[], Dict]):
         """Add a notification type to the manager."""
@@ -71,11 +72,21 @@ class WebsocketManager:
             except WebSocketDisconnect:
                 notifier.subscribers.discard(subscriber)
 
+    async def reload_clients(self):
+        """Notify all clients to reload the page."""
+        logger.info("Requesting reload on all panels")
+        for client in self._clients:
+            try:
+                await client.send_json({"type": "reload"})
+            except WebSocketDisconnect:
+                self._clients.discard(client)
+
     async def serve_client(self, websocket: WebSocket):
         """Serve a WebSocket client connection."""
         await websocket.accept()
         logger.info(f"WebSocket client 0x{id(websocket):x} connected")
         subscriptions = set()
+        self._clients.add(websocket)
         try:
             async for message in websocket.iter_text():
                 try:
@@ -135,6 +146,7 @@ class WebsocketManager:
                         )
         finally:
             logger.info(f"WebSocket client 0x{id(websocket):x} disconnected")
+            self._clients.discard(websocket)
             for event_type in subscriptions:
                 self._notifiers[event_type].subscribers.discard(websocket)
 
@@ -208,6 +220,13 @@ async def read_root():
 async def get_status(current_user: str = Depends(get_current_user)):
     """Get application status (requires authentication)."""
     return {"status": "running", "user": current_user}
+
+
+@app.post("/api/reload_clients")
+async def reload_clients():
+    """Request all clients to reload their pages"""
+    await WEBSOCKET_MANAGER.reload_clients()
+    return {"status": "reload requested"}
 
 
 @app.websocket("/api/websocket")
