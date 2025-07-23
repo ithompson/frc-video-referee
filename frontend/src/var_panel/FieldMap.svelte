@@ -7,8 +7,12 @@
 </div>
 
 <style>
+    .field-map {
+        height: 100%;
+    }
     img {
         object-fit: contain;
-        width: 100%;
+        max-width: 100%;
+        height: 100%;
     }
 </style>

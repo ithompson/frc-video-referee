@@ -8,7 +8,7 @@
   import VerticalList from "./var_panel/VerticalList.svelte";
   import FieldMap from "./var_panel/FieldMap.svelte";
   import EventData from "./var_panel/EventData.svelte";
-  import ScoreData from "./var_panel/ScoreData.svelte";
+  import ScoreCards from "./var_panel/ScoreCards.svelte";
 
   interface Props {
     ws: WebSocketClient;
@@ -29,7 +29,7 @@
   <main>
     <div class="match-ui-container">
       <div class="scoring-container">
-        <ScoreData />
+        <ScoreCards />
       </div>
       <div class="event-info-container">
         <div class="field-map-container">
@@ -110,10 +110,13 @@
   .event-info-container {
     display: flex;
     flex-direction: row;
+    contain: strict;
+    height: 100%;
 
     & div {
       flex: 1 1 0%;
       padding: 10px;
+      height: 100%;
     }
   }
 

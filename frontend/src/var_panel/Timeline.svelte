@@ -4,6 +4,9 @@
 </div>
 
 <style>
+    .timeline-points {
+        height: 50px;
+    }
     input[type="range"] {
         width: 100%;
     }
