@@ -84,7 +84,7 @@
 }
 
 /* Specialize color scheme for the current alliance */
-:root [data-alliance="red"] {
+:global(.red) {
     --alliance-action: var(--red-action);
     --alliance-highlight: var(--red-highlight);
     --alliance-inactive: var(--red-inactive);
@@ -100,7 +100,7 @@
     --opponent-background: var(--blue-background);
 }
 
-:root [data-alliance="blue"] {
+:global(.blue) {
     --alliance-action: var(--blue-action);
     --alliance-highlight: var(--blue-highlight);
     --alliance-inactive: var(--blue-inactive);

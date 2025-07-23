@@ -105,7 +105,6 @@
   .scoring-container {
     width: 100%;
     flex: 1 1 0%;
-    background-color: var(--gray-400);
   }
 
   .event-info-container {
