@@ -28,9 +28,9 @@
 {/snippet}
 
 {#snippet teamStatus(team: number, msg: string, highlight: boolean = false)}
-    <div class="team-status" class:highlight>
-        <div class="team-number">{team}</div>
-        <div class="status">{msg}</div>
+    <div class="status-box" class:highlight>
+        <div class="status-row1">{team}</div>
+        <div class="status-row2">{msg}</div>
     </div>
 {/snippet}
 
@@ -102,17 +102,17 @@
         <div class="score-title">RP</div>
         <div class="score-content rp-wrapper" class:hide_rp>
             <div class="rp-summary">
-                <div class="rp-display rp-auto">
-                    <div class="rp-title">Auto</div>
-                    <div class="rp-state">{@render rpCheck(0, 1)}</div>
+                <div class="status-box">
+                    <div class="status-row1">Auto</div>
+                    <div class="status-row2">{@render rpCheck(0, 1)}</div>
                 </div>
-                <div class="rp-display rp-coral">
-                    <div class="rp-title">Coral</div>
-                    <div class="rp-state">2/4 {@render rpCheck(0, 1)}</div>
+                <div class="status-box">
+                    <div class="status-row1">Coral</div>
+                    <div class="status-row2">2/4 {@render rpCheck(0, 1)}</div>
                 </div>
-                <div class="rp-display rp-barge">
-                    <div class="rp-title">Barge</div>
-                    <div class="rp-state">7/14 {@render rpCheck(0, 1)}</div>
+                <div class="status-box">
+                    <div class="status-row1">Barge</div>
+                    <div class="status-row2">7/14 {@render rpCheck(0, 1)}</div>
                 </div>
             </div>
         </div>
@@ -202,7 +202,7 @@
         gap: 10px;
     }
 
-    .team-status {
+    .status-box {
         border-radius: 8px;
         height: 3.5em;
         width: 5em;
@@ -214,14 +214,14 @@
             padding: 0 0.2em;
         }
 
-        & .team-number {
+        & .status-row1 {
             background-color: var(--alliance-action);
         }
 
-        &:not(.highlight) .status {
+        &:not(.highlight) .status-row2 {
             background-color: var(--neutral-action);
         }
-        &.highlight .status {
+        &.highlight .status-row2 {
             background-color: var(--alliance-highlight);
         }
     }
@@ -275,25 +275,5 @@
     }
     .hide_rp .rp-summary {
         visibility: hidden;
-    }
-    .rp-display {
-        border-radius: 8px;
-        height: 3.5em;
-        width: 5em;
-        overflow: clip;
-
-        & div {
-            height: 50%;
-            align-content: center;
-            padding: 0 0.2em;
-        }
-
-        & .rp-title {
-            background-color: var(--alliance-action);
-        }
-
-        & .rp-state {
-            background-color: var(--neutral-action);
-        }
     }
 </style>
