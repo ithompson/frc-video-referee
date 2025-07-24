@@ -18,6 +18,7 @@
 
 <div class="top-container">
   <StatusHeader
+    server_connected={ws.state.connected}
     arena_connected={server_state.arena_connected}
     hyperdeck_connected={server_state.hyperdeck_connected}
     match_name={"Qualification 5"}
@@ -89,6 +90,14 @@
     height: 100%;
     overflow: hidden;
     padding-bottom: 20px; /* Spacer for the iOS home bar */
+
+    background:
+      radial-gradient(rgba(0, 0, 0, 0.5) 15%, transparent 16%) 0 0,
+      radial-gradient(rgba(0, 0, 0, 0.5) 15%, transparent 16%) 8px 8px,
+      radial-gradient(rgba(255, 255, 255, 0.05) 15%, transparent 20%) 0 1px,
+      radial-gradient(rgba(255, 255, 255, 0.05) 15%, transparent 20%) 8px 9px;
+    background-color: var(--gray-700);
+    background-size: 16px 16px;
   }
 
   .match-ui-container {

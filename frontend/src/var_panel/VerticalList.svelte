@@ -20,5 +20,7 @@
         display: flex;
         flex-direction: column;
         overflow: scroll;
+        padding: 10px 0;
+        gap: 10px;
     }
 </style>

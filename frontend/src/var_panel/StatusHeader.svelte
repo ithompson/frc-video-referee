@@ -2,6 +2,7 @@
     import type { HyperdeckPlaybackState } from "../lib/model";
 
     interface Props {
+        server_connected: boolean;
         arena_connected: boolean;
         hyperdeck_connected: boolean;
         match_name: string;
@@ -10,6 +11,7 @@
     }
 
     let {
+        server_connected,
         arena_connected,
         hyperdeck_connected,
         match_name,
@@ -18,9 +20,19 @@
     }: Props = $props();
 </script>
 
+{#snippet status(ok: boolean)}
+    {#if ok}
+        <span class="status-check status-ok">✓</span>
+    {:else}
+        <span class="status-check status-err">✗</span>
+    {/if}
+{/snippet}
+
 <header>
     <div class="banner_data">
-        Connection Status: {arena_connected ? "Connected" : "Disconnected"}
+        Server: {@render status(server_connected)}
+        Arena: {@render status(arena_connected)}
+        Hyperdeck: {@render status(hyperdeck_connected)}
     </div>
     <div class="banner_title">{match_name}</div>
     <div class="banner_data">Match Time: {match_time_sec} seconds</div>
@@ -38,6 +50,20 @@
         font-size: 18pt;
 
         --banner-title-angle: 30deg;
+    }
+
+    .status-check {
+        font-weight: bold;
+        display: inline-block;
+        inline-size: 1em;
+    }
+
+    .status-ok {
+        color: green;
+    }
+
+    .status-err {
+        color: red;
     }
 
     .banner_data {

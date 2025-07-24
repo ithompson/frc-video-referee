@@ -11,6 +11,7 @@
     <FieldMap />
     <div class="event-data-container">
         <div class="event-header">
+            <div class="event-idx">2</div>
             <div class="event-type">VAR Review</div>
             <div class="event-time">Teleop 1:23</div>
         </div>
@@ -83,6 +84,7 @@
             display: flex;
             flex-direction: row;
             font-weight: bold;
+            padding-bottom: 4px;
             background-color: var(--gray-600);
 
             & div {
@@ -91,27 +93,9 @@
 
             & .event-type {
                 color: var(--text-active-dark);
-                contain: layout;
-                z-index: 0;
-                min-width: 8em;
-
-                &::after,
-                &::before {
-                    content: "";
-                    position: absolute;
-                    width: 100%;
-                    height: 100%;
-                    background-color: var(--green-200);
-                    z-index: -1;
-                    left: 0;
-                    transform: skewX(30deg);
-                }
-                &::before {
-                    transform-origin: left bottom;
-                }
-                &::after {
-                    transform-origin: left top;
-                }
+                background-color: var(--green-200);
+                border-radius: 16px;
+                padding: 0 0.5em;
             }
 
             & .event-time {
