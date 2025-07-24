@@ -8,11 +8,11 @@
 
 <style>
     .field-map {
-        height: 100%;
+        display: flex;
     }
     img {
         object-fit: contain;
-        max-width: 100%;
-        height: 100%;
+        margin: auto;
+        width: 440px;
     }
 </style>

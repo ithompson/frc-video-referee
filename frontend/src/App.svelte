@@ -6,8 +6,7 @@
   import EventListEntry from "./var_panel/EventListEntry.svelte";
   import Timeline from "./var_panel/Timeline.svelte";
   import VerticalList from "./var_panel/VerticalList.svelte";
-  import FieldMap from "./var_panel/FieldMap.svelte";
-  import EventData from "./var_panel/EventData.svelte";
+  import EventCard from "./var_panel/EventCard.svelte";
   import ScoreCards from "./var_panel/ScoreCards.svelte";
 
   interface Props {
@@ -31,13 +30,9 @@
       <div class="scoring-container">
         <ScoreCards />
       </div>
+      <div class="flex-spacer" style="flex: 1 1 0%"></div>
       <div class="event-info-container">
-        <div class="field-map-container">
-          <FieldMap />
-        </div>
-        <div class="event-data-container">
-          <EventData />
-        </div>
+        <EventCard />
       </div>
       <div class="timeline-container">
         <Timeline />
@@ -104,20 +99,12 @@
 
   .scoring-container {
     width: 100%;
-    flex: 1 1 0%;
   }
 
   .event-info-container {
+    margin: 10px;
     display: flex;
-    flex-direction: row;
-    contain: strict;
-    height: 100%;
-
-    & div {
-      flex: 1 1 0%;
-      padding: 10px;
-      height: 100%;
-    }
+    justify-content: center;
   }
 
   .list-container {

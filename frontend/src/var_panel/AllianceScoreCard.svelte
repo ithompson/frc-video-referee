@@ -215,14 +215,14 @@
         }
 
         & .status-row1 {
-            background-color: var(--alliance-action);
+            background-color: var(--alliance-highlight);
         }
 
         &:not(.highlight) .status-row2 {
             background-color: var(--neutral-action);
         }
         &.highlight .status-row2 {
-            background-color: var(--alliance-highlight);
+            background-color: var(--alliance-action);
         }
     }
 
