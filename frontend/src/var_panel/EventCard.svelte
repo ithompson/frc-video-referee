@@ -96,6 +96,7 @@
                 background-color: var(--green-200);
                 border-radius: 16px;
                 padding: 0 0.5em;
+                min-width: 7em;
             }
 
             & .event-time {
@@ -162,7 +163,7 @@
             & li {
                 list-style: none;
                 border-radius: 8px;
-                padding: 5px 10px;
+                padding: 5px 5px;
                 width: 3em;
 
                 &.selected {

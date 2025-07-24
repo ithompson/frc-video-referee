@@ -13,6 +13,7 @@
 
 <style>
     .event-card {
+        box-sizing: border-box;
         border: 4px solid var(--gray-600);
         border-radius: 10px;
         overflow: clip;
@@ -39,14 +40,22 @@
             background-color: var(--green-200);
             border-radius: 16px;
             padding: 0 0.5em;
+            min-width: 6em;
         }
+    }
+
+    .event-details {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 5px 0;
+        align-items: center;
     }
 
     .event-section {
         background-color: var(--gray-600);
         border-radius: 4px;
         width: 90%;
-        margin: 5px;
         padding: 0.2em;
         box-shadow: 0 0 8px black;
     }

@@ -1,72 +1,67 @@
 <div class="match-card">
     <div class="card-header">Q3 Replay 1</div>
-    <div class="match-score">
-        <div class="match-score">
-            <div class="red">273</div>
-            <div class="divider">-</div>
-            <div class="blue">109</div>
+    <div class="match-details">
+        <div class="match-section alliance red">273 - 109</div>
+        <div class="match-section team-lists">
+            <ol class="red">
+                <li>11932</li>
+                <li>2623</li>
+                <li>272</li>
+            </ol>
+            <ol class="blue">
+                <li>142</li>
+                <li>31332</li>
+                <li>19382</li>
+            </ol>
         </div>
-    </div>
-    <div class="team-lists">
-        <ol class="red">
-            <li>11932</li>
-            <li>2623</li>
-            <li>272</li>
-        </ol>
-        <ol class="blue">
-            <li>142</li>
-            <li>31332</li>
-            <li>19382</li>
-        </ol>
     </div>
 </div>
 
 <style>
     .match-card {
-        border: 2px solid black;
+        box-sizing: border-box;
+        border: 4px solid var(--gray-600);
         border-radius: 10px;
         overflow: clip;
-        width: 140px;
+        background-color: var(--gray-700);
         display: flex;
         flex-direction: column;
+        width: 140px;
+        box-shadow: 0 0 8px black;
+        margin: 0 10px;
     }
     .card-header {
-        width: 100%;
-        text-align: center;
-        background-color: var(--red-banner);
-        color: var(--text-active-dark);
+        background-color: var(--gray-600);
+        color: var(--text-active);
         font-weight: bold;
-        padding-bottom: 0.2em;
-        box-shadow: 0 1px 1px;
-        z-index: 5;
+        padding: 2px 0.5em 4px 0.5em;
+        box-shadow: 0 0px 8px black;
     }
-    .match-score {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-        background-color: var(--red-banner);
-        color: var(--text-active-dark);
-        font-weight: bold;
-        box-shadow: 0 1px 1px;
-        z-index: 4;
 
-        & .red,
-        & .blue {
-            width: 100%;
-        }
-        & .divider {
-            width: 2em;
-            text-align: center;
-        }
-        & .red {
-            text-align: right;
-        }
-        & .blue {
-            text-align: left;
-        }
+    .match-details {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 5px 0;
+        align-items: center;
     }
+
+    .match-section {
+        box-sizing: border-box;
+        background-color: var(--gray-600);
+        border-radius: 8px;
+        overflow: clip;
+        width: 90%;
+        padding: 0.2em;
+        box-shadow: 0 0 8px black;
+    }
+    .match-section.alliance {
+        background-color: var(--alliance-overlay-background);
+    }
+
     .team-lists {
         display: flex;
+        padding: 0;
         & ol {
             flex: 1 1 0%;
         }
@@ -79,7 +74,7 @@
     }
     ol {
         list-style-type: none;
-        padding: 0 10px;
+        padding: 0;
         margin: 0;
     }
 </style>

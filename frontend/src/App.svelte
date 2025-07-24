@@ -40,7 +40,7 @@
       </div>
     </div>
     <div class="events list-container">
-      <button class="add-event">Add Event</button>
+      <button class="add-event">Add VAR Review</button>
       <VerticalList>
         {#snippet item()}
           <EventListEntry />
@@ -123,5 +123,25 @@
   .list-container {
     height: 100%;
     overflow: hidden;
+  }
+
+  button {
+    background-color: var(--gray-600);
+    color: var(--text-active-dark);
+    border-radius: 8px;
+    font-weight: bold;
+    margin-top: 10px;
+    height: 4em;
+    box-shadow: 0 0 12px black;
+
+    &.add-event {
+      background-color: var(--red-200);
+      width: 160px;
+    }
+
+    &.go-live {
+      background-color: var(--red-400);
+      width: 140px;
+    }
   }
 </style>
