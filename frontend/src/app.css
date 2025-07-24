@@ -1,34 +1,15 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: Helvetica, Arial, sans-serif;
+  line-height: 1.3;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
+  color: var(--text-active);
   background-color: var(--gray-700);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-.card {
-  padding: 2em;
 }
 
 #app {
@@ -38,13 +19,16 @@ h1 {
   text-align: center;
 }
 
+input, button,
+textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
 button {
   border: none;
   padding: 0;
 }
 button:hover:enabled {
   cursor: auto;
-}
-button:enabled:not(:active) {
-  box-shadow: black 0px 4px 4px;
 }

@@ -1,4 +1,46 @@
 <script lang="ts">
+    let fps = 60;
+    let auto_duration_sec = 15;
+    let pause_duration_sec = 3;
+    let teleop_duration_sec = 135;
+    let scoring_capture_sec = 5;
+
+    let auto_start_time = 0;
+    let auto_end_time = auto_duration_sec;
+    let teleop_start_time = auto_end_time + pause_duration_sec;
+    let teleop_end_time = teleop_start_time + teleop_duration_sec;
+    let total_recording_duration = teleop_end_time + scoring_capture_sec;
+
+    let total_time = total_recording_duration * fps; // Total time in frames for the clip
+    let events = [
+        { time: 0, color: "var(--blue-200)" },
+        { time: (auto_end_time + 3) * fps, color: "var(--green-200)" },
+        { time: 5000, color: "var(--blue-200)" },
+        { time: 2000, color: "var(--auto-inactive)" },
+        { time: (teleop_end_time + 3) * fps, color: "var(--green-200)" },
+        { time: 8000, color: "var(--red-200)" },
+    ];
+    let periods = [
+        {
+            name: "auto",
+            start: auto_start_time * fps,
+            end: auto_end_time * fps,
+        },
+        {
+            name: "teleop",
+            start: teleop_start_time * fps,
+            end: teleop_end_time * fps,
+        },
+    ];
+
+    let timeline_pos = $state(total_time / 2);
+
+    const sorted_events = $derived(events.sort((a, b) => a.time - b.time));
+
+    function handlePointClick(event: MouseEvent) {
+        const target = event.currentTarget as HTMLButtonElement;
+        timeline_pos = parseInt(target.dataset.time!, 10);
+    }
 </script>
 
 {#snippet timelinePoint(
@@ -6,23 +48,44 @@
     label: string,
     color: string = "var(--gray-500)",
 )}
-    <div class="point-wrap">
+    <button
+        class="point-wrap"
+        style="left: calc(((100% - 20px) * {time / total_time}));"
+        onclick={handlePointClick}
+        data-time={time}
+    >
         <div class="point-label" style="background-color: {color};">
             {label}
         </div>
-    </div>
+    </button>
+{/snippet}
+
+{#snippet timelinePeriod(name: string, start: number, end: number)}
+    <div
+        class="slider-period {name}"
+        style="left: calc((100% - 20px) * {start /
+            total_time} + 10px); width: calc((100% - 20px) * {(end - start) /
+            total_time});"
+    ></div>
 {/snippet}
 
 <div class="timeline">
     <div class="timeline-points">
-        {@render timelinePoint(0, "0", "var(--red-200)")}
-        {@render timelinePoint(100, "1", "var(--blue-200)")}
-        {@render timelinePoint(200, "2", "var(--green-200)")}
+        {#each sorted_events as event, index}
+            {@render timelinePoint(event.time, String(index + 1), event.color)}
+        {/each}
     </div>
     <div class="slider-container">
-        <div class="slider-period auto" style="left: 0%; width: 20%;"></div>
-        <div class="slider-period teleop" style="left: 40%; width: 40%;"></div>
-        <input type="range" min="0" max="10000" value="5000" class="slider" />
+        {#each periods as period}
+            {@render timelinePeriod(period.name, period.start, period.end)}
+        {/each}
+        <input
+            type="range"
+            min="0"
+            max={total_time - 1}
+            class="slider"
+            bind:value={timeline_pos}
+        />
     </div>
 </div>
 
@@ -35,12 +98,13 @@
     .timeline-points {
         height: 30px;
         width: 100%;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-evenly;
+        position: relative;
     }
 
     .point-wrap {
+        position: absolute;
+        background: none;
+        top: 0;
         filter: drop-shadow(-1px 6px 3px rgba(0, 0, 0, 0.5));
         z-index: 2;
     }
@@ -58,6 +122,9 @@
         position: relative;
         height: var(--slider-height);
         background: var(--gray-600);
+        border-radius: 8px;
+        overflow: clip;
+        box-shadow: 0 0 10px black;
 
         & .slider-period {
             position: absolute;
@@ -74,6 +141,7 @@
     }
 
     @mixin thumb {
+        box-sizing: border-box;
         height: var(--slider-height);
         width: 20px;
         border-radius: 3px;

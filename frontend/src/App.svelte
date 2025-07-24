@@ -101,6 +101,10 @@
     width: 100%;
   }
 
+  .timeline-container {
+    padding: 0 20px;
+  }
+
   .event-info-container {
     margin: 10px;
     display: flex;
