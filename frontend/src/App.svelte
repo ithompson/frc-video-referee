@@ -135,7 +135,7 @@
     box-shadow: 0 0 12px black;
 
     &.add-event {
-      background-color: var(--red-200);
+      background-color: var(--blue-200);
       width: 160px;
     }
 

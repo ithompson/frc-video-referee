@@ -35,7 +35,7 @@
         Hyperdeck: {@render status(hyperdeck_connected)}
     </div>
     <div class="banner_title">{match_name}</div>
-    <div class="banner_data">Match Time: {match_time_sec} seconds</div>
+    <div class="banner_data">Teleop 1:23 (Pause) 00:00:00.1234</div>
 </header>
 
 <style>

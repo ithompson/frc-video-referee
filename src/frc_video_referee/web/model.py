@@ -1,6 +1,34 @@
 from typing import Dict, List, Literal
 from pydantic import BaseModel, TypeAdapter
 
+from frc_video_referee.cheesy_arena.model import MatchWithResultAndSummary
+from frc_video_referee.db.model import RecordedMatch
+from frc_video_referee.hyperdeck.model import TransportMode
+
+
+class ControllerStatus(BaseModel):
+    selected_match_id: str | None
+
+
+class MatchListEntry(BaseModel):
+    var_data: RecordedMatch
+    """VAR server data for the match"""
+
+    arena_data: MatchWithResultAndSummary | None = None
+    """Arena data associated with the match, if available"""
+
+    clip_available: bool = False
+    """Indicates if the match clip is available for playback"""
+
+
+class HyperdeckStatus(BaseModel):
+    transport_mode: TransportMode
+    """Status of the hyperdeck's output"""
+    playing: bool
+    """Indicates if the hyperdeck is currently playing a clip"""
+    clip_time: float
+    """Current time position in the clip, in seconds"""
+
 
 class WebsocketEvent(BaseModel):
     """Base class for WebSocket events"""
