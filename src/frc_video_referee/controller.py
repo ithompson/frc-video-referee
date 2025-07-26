@@ -182,17 +182,19 @@ class VARController:
         ).total_seconds()
         return max(0.0, time_seconds)
 
-    async def _save_and_unload_current_match(self):
+    async def _save_and_unload_current_match(self, update_hyperdeck: bool = True):
         """Save the current match to the database and unload it."""
         if self._current_match:
             logger.debug(f"Unloading match {self._current_match.var_id}")
             if self._state == ControllerState.Recording:
-                await self._hyperdeck.stop_recording()
+                if update_hyperdeck:
+                    await self._hyperdeck.stop_recording()
                 self._set_state(ControllerState.Idle)
             self._matches[self._current_match.var_id] = self._current_match
             self._db.save_match(self._current_match)
             self._current_match = None
-            await self._hyperdeck.show_live_view()
+            if update_hyperdeck:
+                await self._hyperdeck.show_live_view()
 
     def _add_match_event(self, event: MatchEvent):
         """Add an event to the current match."""
@@ -240,7 +242,7 @@ class VARController:
     async def _handle_match_start(self):
         """Handle a notification that a match has started"""
         async with self._lock:
-            await self._save_and_unload_current_match()
+            await self._save_and_unload_current_match(update_hyperdeck=False)
             self._set_state(ControllerState.Recording)
 
             match_timestamp = datetime.now().astimezone()
