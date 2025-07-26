@@ -20,7 +20,7 @@ from frc_video_referee.web.model import (
 logger = logging.getLogger(__name__)
 
 # Event names used on the websocket interface
-CONTROLLER_STATUS = "controller_status"
+CONTROLLER_STATUS_EVENT = "controller_status"
 CURRENT_MATCH_DATA_EVENT = "current_match_data"
 CURRENT_MATCH_TIME_EVENT = "current_match_time"
 REALTIME_SCORE_EVENT = "realtime_score"
@@ -135,11 +135,19 @@ class VARController:
             self._hyperdeck.subscribe(event, handler)
 
         self._websocket.add_event_type(
-            CONTROLLER_STATUS, self._get_controller_status_event
+            CONTROLLER_STATUS_EVENT, self._get_controller_status_event
+        )
+        self._websocket.add_event_type(
+            MATCH_LIST_EVENT,
+            lambda: {id: match.model_dump() for id, match in self._matches.items()},
         )
         self._websocket.add_event_type(
             CURRENT_MATCH_TIME_EVENT,
             lambda: self._arena.match_time.model_dump(),
+        )
+        self._websocket.add_event_type(
+            CURRENT_MATCH_DATA_EVENT,
+            lambda: self._arena.match_data.match_info.model_dump(),
         )
         self._websocket.add_event_type(
             REALTIME_SCORE_EVENT,
@@ -201,6 +209,7 @@ class VARController:
                 if update_hyperdeck:
                     await self._hyperdeck.stop_recording()
                 self._set_state(ControllerState.Idle)
+                await self._websocket.notify(CONTROLLER_STATUS_EVENT)
             self._matches[self._current_match.var_data.var_id] = self._current_match
             self._db.save_match(self._current_match.var_data)
             self._current_match = None
@@ -235,7 +244,9 @@ class VARController:
             clip_id = await self._hyperdeck.stop_recording()
             self._current_match.var_data.clip_id = clip_id
             self._db.save_match(self._current_match.var_data)
+            await self._websocket.notify(MATCH_LIST_EVENT)
             self._set_state(ControllerState.ReviewingCurrentMatch)
+            await self._websocket.notify(CONTROLLER_STATUS_EVENT)
 
             auto_end_event = None
             for event in self._current_match.var_data.events:
@@ -278,6 +289,8 @@ class VARController:
                 )
             )
             self._db.save_match(self._current_match.var_data)
+            await self._websocket.notify(CONTROLLER_STATUS_EVENT)
+            await self._websocket.notify(MATCH_LIST_EVENT)
 
     async def _handle_auto_period_end(self):
         """Handle a notification that the AUTO period has ended"""
@@ -294,6 +307,7 @@ class VARController:
                     + self._settings.auto_scoring_delay,
                 )
             )
+            await self._websocket.notify(MATCH_LIST_EVENT)
 
     async def _handle_match_end(self):
         """Handle a notification that a match has ended"""
@@ -316,6 +330,7 @@ class VARController:
                         + self._settings.endgame_scoring_delay,
                     )
                 )
+                await self._websocket.notify(MATCH_LIST_EVENT)
                 asyncio.create_task(delayed_stop())
 
     async def _handle_match_commit(self):
@@ -326,6 +341,7 @@ class VARController:
 
             await self._save_and_unload_current_match()
             self._set_state(ControllerState.Idle)
+            await self._websocket.notify(CONTROLLER_STATUS_EVENT)
 
     ###############################################
     # Emitters for nontrivial UI event payloads   #

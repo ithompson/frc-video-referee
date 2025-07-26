@@ -16,6 +16,8 @@
 
   let { ws }: Props = $props();
 
+  let displayed_match = $derived(server_state.current_match);
+
   let realtime_data = $derived(server_state.controller_status.realtime_data);
   let red_score = $derived(
     realtime_data ? server_state.realtime_score.red.score : PLACEHOLDER_SCORE,
@@ -40,7 +42,7 @@
     server_connected={ws.state.connected}
     arena_connected={server_state.arena_connected}
     hyperdeck_connected={server_state.hyperdeck_connected}
-    match_name={"Qualification 5"}
+    match_name={displayed_match.long_name}
     match_time_sec={server_state.match_time?.match_time_sec || 0}
     hyperdeck_status={server_state.hyperdeck_status}
   />
@@ -54,6 +56,7 @@
           {blue_score}
           {red_score_summary}
           {blue_score_summary}
+          match={displayed_match}
         />
       </div>
       <div class="flex-spacer" style="flex: 1 1 0%"></div>

@@ -2,7 +2,7 @@ import { mount } from 'svelte'
 import './app.css'
 import App from './App.svelte'
 import WebSocketClient from './lib/wsclient.svelte'
-import { HyperdeckTransportMode, WebsocketEventType, type ControllerStatus, type HyperdeckStatus, type MatchTime, type RealtimeScore } from './lib/model'
+import { HyperdeckTransportMode, WebsocketEventType, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type RealtimeScore } from './lib/model'
 import { server_state } from './lib/server_state.svelte'
 
 const websocketAddress = import.meta.env.DEV ? 'rho.local:8000' : window.location.host;
@@ -12,7 +12,7 @@ ws.subscribe(WebsocketEventType.ControllerStatus, (data) => {
   server_state.controller_status = data as ControllerStatus;
 });
 ws.subscribe(WebsocketEventType.CurrentMatchData, (data) => {
-  console.log('Current match data received:', data);
+  server_state.current_match = data as Match;
 });
 ws.subscribe(WebsocketEventType.CurrentMatchTime, (data) => {
   server_state.match_time = data as MatchTime;

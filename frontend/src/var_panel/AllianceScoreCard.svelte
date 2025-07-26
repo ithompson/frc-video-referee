@@ -9,6 +9,7 @@
         is_blue: boolean;
         score: Score;
         score_summary: ScoreSummary;
+        teams: number[];
         hide_final_score: boolean;
         hide_rp: boolean;
         toggle_rp?: () => void;
@@ -18,13 +19,12 @@
         is_blue,
         score,
         score_summary,
+        teams,
         hide_final_score,
         hide_rp,
         toggle_rp,
         toggle_final_score,
     }: Props = $props();
-
-    const teams = [11932, 2623, 272];
 
     let l1_total = $derived(score.reef.trough_near + score.reef.trough_far);
     let l2_total = $derived(score.reef.branches[0].filter(Boolean).length);
