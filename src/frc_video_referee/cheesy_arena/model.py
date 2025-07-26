@@ -196,8 +196,34 @@ class ScoreSummary(BaseArenaModel):
     match_points: Annotated[int, Field(alias="MatchPoints")]
     """Total points scored by the alliance in the match"""
 
+    barge_points: Annotated[int, Field(alias="BargePoints")]
+    """Number of barge points scored by the alliance"""
 
-PLACEHOLDER_SCORE_SUMMARY = ScoreSummary(match_points=0)
+    num_coral_levels: Annotated[int, Field(alias="NumCoralLevels")]
+    """Number of coral levels completed by the alliance"""
+
+    num_coral_levels_goal: Annotated[int, Field(alias="NumCoralLevelsGoal")]
+    """Number of coral levels that were the goal for the alliance"""
+
+    auto_bonus_ranking_point: Annotated[bool, Field(alias="AutoBonusRankingPoint")]
+    """Whether the alliance earned the autonomous bonus ranking point"""
+
+    coral_bonus_ranking_point: Annotated[bool, Field(alias="CoralBonusRankingPoint")]
+    """Whether the alliance earned the coral bonus ranking point"""
+
+    barge_bonus_ranking_point: Annotated[bool, Field(alias="BargeBonusRankingPoint")]
+    """Whether the alliance earned the barge bonus ranking point"""
+
+
+PLACEHOLDER_SCORE_SUMMARY = ScoreSummary(
+    match_points=0,
+    barge_points=0,
+    num_coral_levels=0,
+    num_coral_levels_goal=0,
+    auto_bonus_ranking_point=False,
+    coral_bonus_ranking_point=False,
+    barge_bonus_ranking_point=False,
+)
 
 
 #############################################

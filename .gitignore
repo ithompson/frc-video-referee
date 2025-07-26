@@ -1,6 +1,7 @@
 # VAR server configuration and data files
 config.toml
 var.db/
+local_data/
 
 # Frontend build artifacts
 node_modules/

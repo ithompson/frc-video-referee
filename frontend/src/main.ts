@@ -2,12 +2,15 @@ import { mount } from 'svelte'
 import './app.css'
 import App from './App.svelte'
 import WebSocketClient from './lib/wsclient.svelte'
-import { HyperdeckTransportMode, WebsocketEventType, type HyperdeckPlaybackState, type MatchTime, type RealtimeScore } from './lib/model'
+import { HyperdeckTransportMode, WebsocketEventType, type ControllerStatus, type HyperdeckStatus, type MatchTime, type RealtimeScore } from './lib/model'
 import { server_state } from './lib/server_state.svelte'
 
-const websocketAddress = import.meta.env.DEV ? 'localhost:8000' : window.location.host;
+const websocketAddress = import.meta.env.DEV ? 'rho.local:8000' : window.location.host;
 
 const ws = new WebSocketClient(websocketAddress);
+ws.subscribe(WebsocketEventType.ControllerStatus, (data) => {
+  server_state.controller_status = data as ControllerStatus;
+});
 ws.subscribe(WebsocketEventType.CurrentMatchData, (data) => {
   console.log('Current match data received:', data);
 });
@@ -26,11 +29,8 @@ ws.subscribe(WebsocketEventType.ArenaConnection, (data) => {
 ws.subscribe(WebsocketEventType.HyperdeckConnection, (data) => {
   server_state.hyperdeck_connected = data.connected;
 });
-ws.subscribe(WebsocketEventType.HyperdeckTransportMode, (data) => {
-  server_state.hyperdeck_transport_mode = data.transport_mode as HyperdeckTransportMode;
-});
-ws.subscribe(WebsocketEventType.HyperdeckPlaybackState, (data) => {
-  server_state.hyperdeck_playback_state = data as HyperdeckPlaybackState;
+ws.subscribe(WebsocketEventType.HyperdeckStatus, (data) => {
+  server_state.hyperdeck_status = data as HyperdeckStatus;
 });
 
 ws.enable();

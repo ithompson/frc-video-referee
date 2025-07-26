@@ -336,9 +336,6 @@ class CheesyArenaClient:
 
     async def _handle_match_time(self, message: MatchTimeMessage):
         """Handle a matchTime message."""
-        logger.info(
-            f"Match time updated: {message.match_state.name} at {message.match_time_sec} seconds"
-        )
         prev_match_state = self.match_time.match_state
 
         self.match_time = message

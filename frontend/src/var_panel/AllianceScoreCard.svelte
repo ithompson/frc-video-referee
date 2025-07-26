@@ -1,10 +1,14 @@
 <script lang="ts">
     import reef_pole from "../assets/mini_reef_pole.svg";
+    import { EndgameStatus, type Score, type ScoreSummary } from "../lib/model";
 
     let reef_level_rp_threshold = 5;
+    let barge_rp_threshold = 14;
 
     interface Props {
         is_blue: boolean;
+        score: Score;
+        score_summary: ScoreSummary;
         hide_final_score: boolean;
         hide_rp: boolean;
         toggle_rp?: () => void;
@@ -12,11 +16,51 @@
     }
     let {
         is_blue,
+        score,
+        score_summary,
         hide_final_score,
         hide_rp,
         toggle_rp,
         toggle_final_score,
     }: Props = $props();
+
+    const teams = [11932, 2623, 272];
+
+    let l1_total = $derived(score.reef.trough_near + score.reef.trough_far);
+    let l2_total = $derived(score.reef.branches[0].filter(Boolean).length);
+    let l3_total = $derived(score.reef.branches[1].filter(Boolean).length);
+    let l4_total = $derived(score.reef.branches[2].filter(Boolean).length);
+    let l1_auto_total = $derived(
+        score.reef.auto_trough_near + score.reef.auto_trough_far,
+    );
+    let l2_auto_total = $derived(
+        score.reef.auto_branches[0].filter(Boolean).length,
+    );
+    let l3_auto_total = $derived(
+        score.reef.auto_branches[1].filter(Boolean).length,
+    );
+    let l4_auto_total = $derived(
+        score.reef.auto_branches[2].filter(Boolean).length,
+    );
+
+    function leaveText(state: boolean): string {
+        return state ? "Leave" : "None";
+    }
+
+    function endgameText(state: EndgameStatus): string {
+        switch (state) {
+            case EndgameStatus.DEEP_CAGE:
+                return "Deep";
+            case EndgameStatus.SHALLOW_CAGE:
+                return "Shallow";
+            case EndgameStatus.PARKED:
+                return "Park";
+            case EndgameStatus.NONE:
+                return "None";
+            default:
+                return "";
+        }
+    }
 </script>
 
 {#snippet rpCheck(count: number, threshold: number)}
@@ -52,7 +96,7 @@
             onkeydown={toggle_final_score}
         >
             {#if !hide_final_score}
-                {is_blue ? 109 : 273}
+                {score_summary.match_points}
             {/if}
         </div>
         <div class="score-banner">
@@ -62,9 +106,13 @@
     <div class="score-card">
         <div class="score-title">Auto</div>
         <div class="score-content auto-score">
-            {@render teamStatus(11932, "Leave", true)}
-            {@render teamStatus(2623, "None", false)}
-            {@render teamStatus(272, "Leave", true)}
+            {#each teams as team, idx}
+                {@render teamStatus(
+                    team,
+                    leaveText(score.leave_statuses[idx]),
+                    score.leave_statuses[idx],
+                )}
+            {/each}
         </div>
     </div>
     <div class="score-card">
@@ -72,23 +120,29 @@
         <div class="score-content reef-algae-container">
             <img class="reef-pole" src={reef_pole} alt="Reef Pole" />
             <div class="reef-totals">
-                {@render reefTotal(6, 1)}
-                {@render reefTotal(3, 0)}
-                {@render reefTotal(5, 2)}
-                {@render reefTotal(3, 3)}
+                {@render reefTotal(l4_total, l4_auto_total)}
+                {@render reefTotal(l3_total, l3_auto_total)}
+                {@render reefTotal(l2_total, l2_auto_total)}
+                {@render reefTotal(l1_total, l1_auto_total)}
             </div>
             <div class="algae-container">
-                <div class="algae-barge">Barge: 5</div>
-                <div class="algae-processor">Processor: 3</div>
+                <div class="algae-barge">Barge: {score.barge_algae}</div>
+                <div class="algae-processor">
+                    Processor: {score.processor_algae}
+                </div>
             </div>
         </div>
     </div>
     <div class="score-card">
         <div class="score-title">Endgame</div>
         <div class="score-content endgame-score">
-            {@render teamStatus(11932, "Deep", true)}
-            {@render teamStatus(2623, "None", false)}
-            {@render teamStatus(272, "Shallow", true)}
+            {#each teams as team, idx}
+                {@render teamStatus(
+                    team,
+                    endgameText(score.endgame_statuses[idx]),
+                    score.endgame_statuses[idx] !== EndgameStatus.NONE,
+                )}
+            {/each}
         </div>
     </div>
 
@@ -104,15 +158,32 @@
             <div class="rp-summary">
                 <div class="status-box">
                     <div class="status-row1">Auto</div>
-                    <div class="status-row2">{@render rpCheck(0, 1)}</div>
+                    <div class="status-row2">
+                        {@render rpCheck(
+                            score_summary.auto_bonus_ranking_point ? 1 : 0,
+                            1,
+                        )}
+                    </div>
                 </div>
                 <div class="status-box">
                     <div class="status-row1">Coral</div>
-                    <div class="status-row2">2/4 {@render rpCheck(0, 1)}</div>
+                    <div class="status-row2">
+                        {score_summary.num_coral_levels}/{score_summary.num_coral_levels_goal}
+                        {@render rpCheck(
+                            score_summary.coral_bonus_ranking_point ? 1 : 0,
+                            1,
+                        )}
+                    </div>
                 </div>
                 <div class="status-box">
                     <div class="status-row1">Barge</div>
-                    <div class="status-row2">7/14 {@render rpCheck(0, 1)}</div>
+                    <div class="status-row2">
+                        {score_summary.barge_points}/{barge_rp_threshold}
+                        {@render rpCheck(
+                            score_summary.barge_bonus_ranking_point ? 1 : 0,
+                            1,
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

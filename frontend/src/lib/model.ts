@@ -12,6 +12,23 @@ export interface Reef {
     trough_far: number;
 }
 
+export const PLACEHOLDER_REEF: Reef = {
+    auto_branches: [
+        [false, false, false, false, false, false, false, false, false, false, false, false],
+        [false, false, false, false, false, false, false, false, false, false, false, false],
+        [false, false, false, false, false, false, false, false, false, false, false, false],
+    ],
+    branches: [
+        [false, false, false, false, false, false, false, false, false, false, false, false],
+        [false, false, false, false, false, false, false, false, false, false, false, false],
+        [false, false, false, false, false, false, false, false, false, false, false, false],
+    ],
+    auto_trough_near: 0,
+    auto_trough_far: 0,
+    trough_near: 0,
+    trough_far: 0,
+}
+
 export interface Foul {
     is_major: boolean;
     team_id: number;
@@ -33,13 +50,42 @@ export interface Score {
     endgame_statuses: [EndgameStatus, EndgameStatus, EndgameStatus];
 }
 
+export const PLACEHOLDER_SCORE: Score = {
+    leave_statuses: [false, false, false],
+    reef: PLACEHOLDER_REEF,
+    barge_algae: 0,
+    processor_algae: 0,
+    endgame_statuses: [EndgameStatus.NONE, EndgameStatus.NONE, EndgameStatus.NONE],
+}
+
 export interface ScoreSummary {
     match_points: number
+    barge_points: number
+    num_coral_levels: number;
+    num_coral_levels_goal: number;
+    auto_bonus_ranking_point: boolean;
+    coral_bonus_ranking_point: boolean;
+    barge_bonus_ranking_point: boolean;
+}
+
+export const PLACEHOLDER_SCORE_SUMMARY = {
+    match_points: 0,
+    barge_points: 0,
+    num_coral_levels: 0,
+    num_coral_levels_goal: 0,
+    auto_bonus_ranking_point: false,
+    coral_bonus_ranking_point: false,
+    barge_bonus_ranking_point: false,
 }
 
 export interface ScoreWithSummary {
     score: Score;
     score_summary: ScoreSummary;
+}
+
+export const PLACEHOLDER_SCORE_WITH_SUMMARY: ScoreWithSummary = {
+    score: PLACEHOLDER_SCORE,
+    score_summary: PLACEHOLDER_SCORE_SUMMARY,
 }
 
 export interface Cards {
@@ -51,6 +97,13 @@ export interface RealtimeScore {
     blue: ScoreWithSummary;
     red_cards: Cards;
     blue_cards: Cards;
+}
+
+export const PLACEHOLDER_REALTIME_SCORE: RealtimeScore = {
+    red: PLACEHOLDER_SCORE_WITH_SUMMARY,
+    blue: PLACEHOLDER_SCORE_WITH_SUMMARY,
+    red_cards: {},
+    blue_cards: {},
 }
 
 /* Evergreen arena status */
@@ -157,30 +210,27 @@ export enum HyperdeckTransportMode {
     Output = "Output",
 }
 
-export enum HyperdeckPlaybackType {
-    Play = "Play",
-    Jog = "Jog",
-    Shuttle = "Shuttle",
-    Var = "Var",
+export interface ControllerStatus {
+    selected_match_id: number | null;
+    recording: boolean;
+    realtime_data: boolean;
 }
 
-export interface HyperdeckPlaybackState {
-    type: HyperdeckPlaybackType;
-    loop: boolean;
-    singleClip: boolean;
-    speed: number;
-    position: number;
+export interface HyperdeckStatus {
+    transport_mode: HyperdeckTransportMode;
+    playing: boolean;
+    clip_time: number;
 }
 
 export enum WebsocketEventType {
+    ControllerStatus = "controller_status",
     CurrentMatchData = "current_match_data",
     CurrentMatchTime = "current_match_time",
     RealtimeScore = "realtime_score",
     MatchList = "match_list",
     ArenaConnection = "arena_connection",
     HyperdeckConnection = "hyperdeck_connection",
-    HyperdeckTransportMode = "hyperdeck_transport_mode",
-    HyperdeckPlaybackState = "hyperdeck_playback_state",
+    HyperdeckStatus = "hyperdeck_status",
 }
 
 export interface WebsocketEvent {

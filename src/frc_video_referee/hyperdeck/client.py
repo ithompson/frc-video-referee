@@ -152,7 +152,7 @@ class HyperdeckClient:
                         case EventMessage():
                             match message.data:
                                 case EventData():
-                                    logger.info(
+                                    logger.debug(
                                         f"Received event: {message.data.property} = {message.data.value}"
                                     )
                                     await self._handle_property_change(

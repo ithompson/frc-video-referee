@@ -11,7 +11,11 @@ from frc_video_referee.hyperdeck.client import HyperdeckClient, HyperdeckNotifie
 from frc_video_referee.cheesy_arena.client import ArenaNotifier, CheesyArenaClient
 from frc_video_referee.hyperdeck.model import PlaybackType
 from frc_video_referee.web import WebsocketManager
-from frc_video_referee.web.model import ControllerStatus, HyperdeckStatus
+from frc_video_referee.web.model import (
+    ControllerStatus,
+    HyperdeckStatus,
+    MatchListEntry,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +73,11 @@ class VARController:
 
         self._lock = asyncio.Lock()
         self._state = ControllerState.Idle
-        self._matches = self._db.load_all_matches()
-        self._current_match: RecordedMatch | None = None
+        self._matches = {
+            id: MatchListEntry(var_data=match)
+            for id, match in db.load_all_matches().items()
+        }
+        self._current_match: MatchListEntry | None = None
 
         # Register callbacks for events that the controller is interested in
         arena_subscriptions = [
@@ -182,20 +189,20 @@ class VARController:
         if self._current_match is None:
             return 0.0
         time_seconds = (
-            datetime.now().astimezone() - self._current_match.timestamp
+            datetime.now().astimezone() - self._current_match.var_data.timestamp
         ).total_seconds()
         return max(0.0, time_seconds)
 
     async def _save_and_unload_current_match(self, update_hyperdeck: bool = True):
         """Save the current match to the database and unload it."""
         if self._current_match:
-            logger.debug(f"Unloading match {self._current_match.var_id}")
+            logger.debug(f"Unloading match {self._current_match.var_data.var_id}")
             if self._state == ControllerState.Recording:
                 if update_hyperdeck:
                     await self._hyperdeck.stop_recording()
                 self._set_state(ControllerState.Idle)
-            self._matches[self._current_match.var_id] = self._current_match
-            self._db.save_match(self._current_match)
+            self._matches[self._current_match.var_data.var_id] = self._current_match
+            self._db.save_match(self._current_match.var_data)
             self._current_match = None
             if update_hyperdeck:
                 await self._hyperdeck.show_live_view()
@@ -207,11 +214,11 @@ class VARController:
             return
 
         logger.info(
-            f"Match {self._current_match.var_id}: {event.event_type.value} event at {event.time}"
+            f"Match {self._current_match.var_data.var_id}: {event.event_type.value} event at {event.time}"
         )
 
-        self._current_match.events.append(event)
-        self._db.save_match(self._current_match)
+        self._current_match.var_data.events.append(event)
+        self._db.save_match(self._current_match.var_data)
 
     async def _finalize_match_recording(self):
         """Finalize the current match recording."""
@@ -221,14 +228,17 @@ class VARController:
                 return
 
             assert self._current_match is not None, "No current match to finalize"
-            logger.info(f"Match {self._current_match.var_id} ended, stopping recording")
+            logger.info(
+                f"Match {self._current_match.var_data.var_id} ended, stopping recording"
+            )
 
             clip_id = await self._hyperdeck.stop_recording()
-            self._current_match.clip_id = clip_id
+            self._current_match.var_data.clip_id = clip_id
+            self._db.save_match(self._current_match.var_data)
             self._set_state(ControllerState.ReviewingCurrentMatch)
 
             auto_end_event = None
-            for event in self._current_match.events:
+            for event in self._current_match.var_data.events:
                 if event.event_type == MatchEventType.AUTO_SCORING:
                     auto_end_event = event
                     break
@@ -259,13 +269,15 @@ class VARController:
             clip_id = await self._hyperdeck.start_recording(recording_name)
             logger.debug(f"HyperDeck clip ID: {clip_id} with filename {recording_name}")
 
-            self._current_match = RecordedMatch(
-                var_id=match_id,
-                arena_id=self._arena.match_data.match_info.id,
-                clip_file_name=recording_name,
-                timestamp=match_timestamp,
+            self._current_match = MatchListEntry(
+                var_data=RecordedMatch(
+                    var_id=match_id,
+                    arena_id=self._arena.match_data.match_info.id,
+                    clip_file_name=recording_name,
+                    timestamp=match_timestamp,
+                )
             )
-            self._db.save_match(self._current_match)
+            self._db.save_match(self._current_match.var_data)
 
     async def _handle_auto_period_end(self):
         """Handle a notification that the AUTO period has ended"""
@@ -336,7 +348,9 @@ class VARController:
             case _:
                 assert False, f"Unknown controller state: {self._state}"
 
-        selected_match_id = self._current_match.var_id if self._current_match else None
+        selected_match_id = (
+            self._current_match.var_data.var_id if self._current_match else None
+        )
         return ControllerStatus(
             recording=recording,
             realtime_data=realtime_data,
@@ -345,11 +359,11 @@ class VARController:
 
     def _get_hyperdeck_status_event(self) -> dict:
         """Get the current HyperDeck status for the UI."""
-        if not self._current_match or self._current_match.clip_id is None:
+        if not self._current_match or self._current_match.var_data.clip_id is None:
             clip_time = 0.0
         else:
             clip_time = self._hyperdeck.get_current_time_within_clip(
-                self._current_match.clip_id
+                self._current_match.var_data.clip_id
             )
         playing = self._hyperdeck.playback_state.type == PlaybackType.Play
         return HyperdeckStatus(

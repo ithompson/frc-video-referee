@@ -8,12 +8,31 @@
   import VerticalList from "./var_panel/VerticalList.svelte";
   import EventCard from "./var_panel/EventCard.svelte";
   import ScoreCards from "./var_panel/ScoreCards.svelte";
+  import { PLACEHOLDER_SCORE, PLACEHOLDER_SCORE_SUMMARY } from "./lib/model";
 
   interface Props {
     ws: WebSocketClient;
   }
 
   let { ws }: Props = $props();
+
+  let realtime_data = $derived(server_state.controller_status.realtime_data);
+  let red_score = $derived(
+    realtime_data ? server_state.realtime_score.red.score : PLACEHOLDER_SCORE,
+  );
+  let blue_score = $derived(
+    realtime_data ? server_state.realtime_score.blue.score : PLACEHOLDER_SCORE,
+  );
+  let red_score_summary = $derived(
+    realtime_data
+      ? server_state.realtime_score.red.score_summary
+      : PLACEHOLDER_SCORE_SUMMARY,
+  );
+  let blue_score_summary = $derived(
+    realtime_data
+      ? server_state.realtime_score.blue.score_summary
+      : PLACEHOLDER_SCORE_SUMMARY,
+  );
 </script>
 
 <div class="top-container">
@@ -23,13 +42,19 @@
     hyperdeck_connected={server_state.hyperdeck_connected}
     match_name={"Qualification 5"}
     match_time_sec={server_state.match_time?.match_time_sec || 0}
-    playback_state={server_state.hyperdeck_playback_state}
+    hyperdeck_status={server_state.hyperdeck_status}
   />
 
   <main>
     <div class="match-ui-container">
       <div class="scoring-container">
-        <ScoreCards />
+        <ScoreCards
+          hide_scores={realtime_data}
+          {red_score}
+          {blue_score}
+          {red_score_summary}
+          {blue_score_summary}
+        />
       </div>
       <div class="flex-spacer" style="flex: 1 1 0%"></div>
       <div class="event-info-container">

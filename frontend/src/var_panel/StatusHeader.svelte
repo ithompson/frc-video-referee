@@ -1,5 +1,5 @@
 <script lang="ts">
-    import type { HyperdeckPlaybackState } from "../lib/model";
+    import type { HyperdeckStatus } from "../lib/model";
 
     interface Props {
         server_connected: boolean;
@@ -7,7 +7,7 @@
         hyperdeck_connected: boolean;
         match_name: string;
         match_time_sec: number;
-        playback_state: HyperdeckPlaybackState;
+        hyperdeck_status: HyperdeckStatus;
     }
 
     let {
@@ -16,7 +16,7 @@
         hyperdeck_connected,
         match_name,
         match_time_sec,
-        playback_state,
+        hyperdeck_status,
     }: Props = $props();
 </script>
 
