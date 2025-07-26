@@ -1,4 +1,4 @@
-import { HyperdeckTransportMode, MatchState, MatchStatus, MatchType, PLACEHOLDER_REALTIME_SCORE, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type RealtimeScore, type VARMatchTable } from './model';
+import { DEFAULT_MATCH_TIMING, HyperdeckTransportMode, MatchState, MatchStatus, MatchType, PLACEHOLDER_REALTIME_SCORE, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type MatchTiming, type RealtimeScore, type VARMatchTable } from './model';
 
 export interface ServerState {
     arena_connected: boolean;
@@ -8,6 +8,7 @@ export interface ServerState {
     matches: VARMatchTable;
     current_match: Match;
     realtime_score: RealtimeScore;
+    match_timing: MatchTiming;
     match_time: MatchTime;
     hyperdeck_status: HyperdeckStatus;
 }
@@ -38,6 +39,7 @@ export const server_state: ServerState = $state({
         status: MatchStatus.SCHEDULED,
     },
     realtime_score: PLACEHOLDER_REALTIME_SCORE,
+    match_timing: DEFAULT_MATCH_TIMING,
     match_time: {
         match_state: MatchState.PRE_MATCH,
         match_time_sec: 0,

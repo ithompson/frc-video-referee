@@ -1,5 +1,6 @@
 <script lang="ts">
-    import type { HyperdeckStatus } from "../lib/model";
+    import { formatMatchTime } from "../lib/match_time";
+    import type { HyperdeckStatus, MatchTiming } from "../lib/model";
 
     interface Props {
         server_connected: boolean;
@@ -7,6 +8,7 @@
         hyperdeck_connected: boolean;
         match_name: string;
         match_time_sec: number;
+        match_timing: MatchTiming;
         hyperdeck_status: HyperdeckStatus;
     }
 
@@ -16,6 +18,7 @@
         hyperdeck_connected,
         match_name,
         match_time_sec,
+        match_timing,
         hyperdeck_status,
     }: Props = $props();
 </script>
@@ -35,7 +38,9 @@
         Hyperdeck: {@render status(hyperdeck_connected)}
     </div>
     <div class="banner_title">{match_name}</div>
-    <div class="banner_data">Teleop 1:23 (Pause) 00:00:00.1234</div>
+    <div class="banner_data">
+        {formatMatchTime(match_time_sec, match_timing)} (Pause) 00:00:00.1234
+    </div>
 </header>
 
 <style>

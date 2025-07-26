@@ -1,12 +1,14 @@
 <script lang="ts">
     import { getEventTypeColor, getEventTypeString } from "../lib/events";
-    import type { MatchEvent } from "../lib/model";
+    import { formatMatchTime } from "../lib/match_time";
+    import type { MatchEvent, MatchTiming } from "../lib/model";
 
     interface Props {
         event_idx: number;
         event: MatchEvent;
+        match_timing: MatchTiming;
     }
-    let { event_idx, event }: Props = $props();
+    let { event_idx, event, match_timing }: Props = $props();
 </script>
 
 <div class="event-card">
@@ -20,9 +22,13 @@
         <span class="event-spacer"></span>
     </div>
     <div class="event-details">
-        <div class="event-section">Teleop 1:23</div>
-        <div class="event-section">Damaging contact</div>
-        <div class="event-section alliance red">Team 123</div>
+        <div class="event-section">
+            {formatMatchTime(event.time, match_timing)}
+        </div>
+        {#if event.reason}
+            <div class="event-section">{event.reason}</div>
+        {/if}
+        <!-- <div class="event-section alliance red">Team 123</div> -->
     </div>
 </div>
 

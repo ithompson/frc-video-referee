@@ -306,6 +306,35 @@ PLACEHOLDER_MATCH_LOAD_MESSAGE = MatchLoadMessage(
 )
 
 
+class MatchTimingMessage(BaseArenaModel):
+    """Contents of a matchTiming message"""
+
+    warmup_duration_sec: Annotated[int, Field(alias="WarmupDurationSec")]
+    """Duration of the pre-match warmup period in seconds"""
+    auto_duration_sec: Annotated[int, Field(alias="AutoDurationSec")]
+    """Duration of the autonomous period in seconds"""
+    pause_duration_sec: Annotated[int, Field(alias="PauseDurationSec")]
+    """Duration of the pause period in seconds"""
+    teleop_duration_sec: Annotated[int, Field(alias="TeleopDurationSec")]
+    """Duration of the teleoperated period in seconds"""
+    warning_remaining_duration_sec: Annotated[
+        int, Field(alias="WarningRemainingDurationSec")
+    ]
+    """Duration of the warning period in seconds"""
+    timeout_duration_sec: Annotated[int, Field(alias="TimeoutDurationSec")]
+    """Duration of the timeout period in seconds"""
+
+
+DEFAULT_MATCH_TIMING_MESSAGE = MatchTimingMessage(
+    warmup_duration_sec=0,
+    auto_duration_sec=15,
+    pause_duration_sec=3,
+    teleop_duration_sec=135,
+    warning_remaining_duration_sec=20,
+    timeout_duration_sec=0,
+)
+
+
 class MatchTimeMessage(BaseArenaModel):
     """Contents of a matchTime message"""
 

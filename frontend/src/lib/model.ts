@@ -120,6 +120,24 @@ export enum MatchState {
     POST_TIMEOUT = 8,
 }
 
+export interface MatchTiming {
+    warmup_duration_sec: number;
+    auto_duration_sec: number;
+    pause_duration_sec: number;
+    teleop_duration_sec: number;
+    warning_remaining_duration_sec: number;
+    timeout_duration_sec: number;
+}
+
+export const DEFAULT_MATCH_TIMING: MatchTiming = {
+    warmup_duration_sec: 0,
+    auto_duration_sec: 15,
+    pause_duration_sec: 3,
+    teleop_duration_sec: 135,
+    warning_remaining_duration_sec: 20,
+    timeout_duration_sec: 0,
+}
+
 export interface MatchTime {
     match_state: MatchState;
     match_time_sec: number;

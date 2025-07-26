@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Event names used on the websocket interface
 CONTROLLER_STATUS_EVENT = "controller_status"
+MATCH_TIMING_EVENT = "match_timing"
 CURRENT_MATCH_DATA_EVENT = "current_match_data"
 CURRENT_MATCH_TIME_EVENT = "current_match_time"
 REALTIME_SCORE_EVENT = "realtime_score"
@@ -101,6 +102,10 @@ class VARController:
                 self._handle_realtime_score_update,
             ),
             (
+                ArenaNotifier.MATCH_TIMING_UPDATED,
+                self._handle_match_timing_update,
+            ),
+            (
                 ArenaNotifier.MATCH_TIME_UPDATED,
                 self._handle_match_time_update,
             ),
@@ -140,6 +145,10 @@ class VARController:
         self._websocket.add_event_type(
             MATCH_LIST_EVENT,
             lambda: {id: match.model_dump() for id, match in self._matches.items()},
+        )
+        self._websocket.add_event_type(
+            MATCH_TIMING_EVENT,
+            lambda: self._arena.match_timing.model_dump(),
         )
         self._websocket.add_event_type(
             CURRENT_MATCH_TIME_EVENT,
@@ -410,6 +419,10 @@ class VARController:
     async def _handle_match_data_update(self):
         """Handle a notification that the match data has changed"""
         await self._websocket.notify(CURRENT_MATCH_DATA_EVENT)
+
+    async def _handle_match_timing_update(self):
+        """Handle a notification that the match timing has changed"""
+        await self._websocket.notify(MATCH_TIMING_EVENT)
 
     async def _handle_match_time_update(self):
         """Handle a notification that the match time has changed"""

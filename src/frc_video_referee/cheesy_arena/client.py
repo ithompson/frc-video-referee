@@ -11,11 +11,13 @@ from frc_video_referee.db import DB
 from frc_video_referee.db.model import ArenaClientState
 
 from .model import (
+    DEFAULT_MATCH_TIMING_MESSAGE,
     PLACEHOLDER_ARENA_STATUS_MESSAGE,
     MatchLoadMessage,
     MatchResultList,
     MatchState,
     MatchTimeMessage,
+    MatchTimingMessage,
     MatchWithResultAndSummary,
     RealtimeScoreMessage,
     ScoringStatusMessage,
@@ -76,6 +78,8 @@ class ArenaNotifier(enum.Enum):
     """Notification that the match scores have been updated"""
     REALTIME_SCORE_UPDATED = enum.auto()
     """Notification that the realtime scoring data has been updated"""
+    MATCH_TIMING_UPDATED = enum.auto()
+    """Notification that the match timing data has been updated"""
     MATCH_TIME_UPDATED = enum.auto()
     """Notification that the match time and state has been updated"""
     MATCH_DATA_UPDATED = enum.auto()
@@ -115,6 +119,8 @@ class CheesyArenaClient:
         """Current realtime scoring data"""
         self.match_data = PLACEHOLDER_MATCH_LOAD_MESSAGE
         """Data about the currently loaded match"""
+        self.match_timing = DEFAULT_MATCH_TIMING_MESSAGE
+        """Current match timing data"""
         self.match_time = PLACEHOLDER_MATCH_TIME_MESSAGE
         """Current match time and state"""
         self.arena_status = PLACEHOLDER_ARENA_STATUS_MESSAGE
@@ -124,6 +130,10 @@ class CheesyArenaClient:
             "matchLoad": ArenaMessageHandler(
                 data_type=MatchLoadMessage,
                 handler=self._handle_match_load,
+            ),
+            "matchTiming": ArenaMessageHandler(
+                data_type=MatchTimingMessage,
+                handler=self._handle_match_timing,
             ),
             "matchTime": ArenaMessageHandler(
                 data_type=MatchTimeMessage,
@@ -333,6 +343,11 @@ class CheesyArenaClient:
         )
         self.match_data = message
         await self._notify(ArenaNotifier.MATCH_DATA_UPDATED)
+
+    async def _handle_match_timing(self, message: MatchTimingMessage):
+        """Handle a matchTiming message."""
+        self.match_timing = message
+        await self._notify(ArenaNotifier.MATCH_TIMING_UPDATED)
 
     async def _handle_match_time(self, message: MatchTimeMessage):
         """Handle a matchTime message."""
