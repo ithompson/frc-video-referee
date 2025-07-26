@@ -8,6 +8,10 @@ from frc_video_referee.hyperdeck.model import TransportMode
 
 class ControllerStatus(BaseModel):
     selected_match_id: str | None
+    recording: bool
+    """Indicates if the controller is currently recording a match"""
+    realtime_data: bool
+    """Indicates if the current match is using real-time data"""
 
 
 class MatchListEntry(BaseModel):

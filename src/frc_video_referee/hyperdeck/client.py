@@ -282,3 +282,21 @@ class HyperdeckClient:
                 await callback()
             except Exception as e:
                 logger.error(f"Error notifying subscriber for {notifier.name}: {e}")
+
+    def get_current_time_within_clip(self, clip_id: int) -> float:
+        """Get the current time within a specific clip."""
+        if clip_id not in self._timeline or clip_id not in self._clips:
+            return 0.0
+
+        clip = self._clips[clip_id]
+        timeline_entry = self._timeline[clip_id]
+        clip_start_frame = timeline_entry.timelineIn
+        clip_frame_count = timeline_entry.frameCount
+
+        current_frame = self.playback_state.position - clip_start_frame
+        current_frame = max(0, current_frame)  # Ensure we don't go negative
+        current_frame = min(
+            current_frame, clip_frame_count - 1
+        )  # Ensure we don't exceed the clip length
+
+        return (timeline_entry.clipIn + current_frame) / clip.videoFormat.frameRate

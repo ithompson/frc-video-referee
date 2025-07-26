@@ -9,19 +9,21 @@ from frc_video_referee import db
 from frc_video_referee.db.model import MatchEvent, MatchEventType, RecordedMatch
 from frc_video_referee.hyperdeck.client import HyperdeckClient, HyperdeckNotifier
 from frc_video_referee.cheesy_arena.client import ArenaNotifier, CheesyArenaClient
+from frc_video_referee.hyperdeck.model import PlaybackType
 from frc_video_referee.web import WebsocketManager
+from frc_video_referee.web.model import ControllerStatus, HyperdeckStatus
 
 logger = logging.getLogger(__name__)
 
 # Event names used on the websocket interface
+CONTROLLER_STATUS = "controller_status"
 CURRENT_MATCH_DATA_EVENT = "current_match_data"
 CURRENT_MATCH_TIME_EVENT = "current_match_time"
 REALTIME_SCORE_EVENT = "realtime_score"
 MATCH_LIST_EVENT = "match_list"
 ARENA_CONNECTION_EVENT = "arena_connection"
 HYPERDECK_CONNECTION_EVENT = "hyperdeck_connection"
-HYPERDECK_TRANSPORT_MODE_EVENT = "hyperdeck_transport_mode"
-HYPERDECK_PLAYBACK_EVENT = "hyperdeck_playback"
+HYPERDECK_STATUS_EVENT = "hyperdeck_status"
 
 
 class VARSettings(BaseModel):
@@ -126,6 +128,9 @@ class VARController:
             self._hyperdeck.subscribe(event, handler)
 
         self._websocket.add_event_type(
+            CONTROLLER_STATUS, self._get_controller_status_event
+        )
+        self._websocket.add_event_type(
             CURRENT_MATCH_TIME_EVENT,
             lambda: self._arena.match_time.model_dump(),
         )
@@ -140,12 +145,7 @@ class VARController:
             HYPERDECK_CONNECTION_EVENT, lambda: {"connected": self._hyperdeck.connected}
         )
         self._websocket.add_event_type(
-            HYPERDECK_TRANSPORT_MODE_EVENT,
-            lambda: {"transport_mode": self._hyperdeck.transport_mode.name},
-        )
-        self._websocket.add_event_type(
-            HYPERDECK_PLAYBACK_EVENT,
-            lambda: self._hyperdeck.playback_state.model_dump(),
+            HYPERDECK_STATUS_EVENT, self._get_hyperdeck_status_event
         )
 
     #########################################
@@ -316,6 +316,49 @@ class VARController:
             self._set_state(ControllerState.Idle)
 
     ###############################################
+    # Emitters for nontrivial UI event payloads   #
+    ###############################################
+
+    def _get_controller_status_event(self) -> dict:
+        match self._state:
+            case ControllerState.Idle:
+                recording = False
+                realtime_data = True
+            case ControllerState.Recording:
+                recording = True
+                realtime_data = True
+            case ControllerState.ReviewingCurrentMatch:
+                recording = False
+                realtime_data = True
+            case ControllerState.ReviewingHistoricalMatch:
+                recording = False
+                realtime_data = False
+            case _:
+                assert False, f"Unknown controller state: {self._state}"
+
+        selected_match_id = self._current_match.var_id if self._current_match else None
+        return ControllerStatus(
+            recording=recording,
+            realtime_data=realtime_data,
+            selected_match_id=selected_match_id,
+        ).model_dump()
+
+    def _get_hyperdeck_status_event(self) -> dict:
+        """Get the current HyperDeck status for the UI."""
+        if not self._current_match or self._current_match.clip_id is None:
+            clip_time = 0.0
+        else:
+            clip_time = self._hyperdeck.get_current_time_within_clip(
+                self._current_match.clip_id
+            )
+        playing = self._hyperdeck.playback_state.type == PlaybackType.Play
+        return HyperdeckStatus(
+            transport_mode=self._hyperdeck.transport_mode,
+            playing=playing,
+            clip_time=clip_time,
+        ).model_dump()
+
+    ###############################################
     # Handlers for arena-related UI data changing #
     ###############################################
 
@@ -351,11 +394,11 @@ class VARController:
 
     async def _handle_hyperdeck_transport_mode_update(self):
         """Handle a notification that the HyperDeck transport mode has changed"""
-        await self._websocket.notify(HYPERDECK_TRANSPORT_MODE_EVENT)
+        await self._websocket.notify(HYPERDECK_STATUS_EVENT)
 
     async def _handle_hyperdeck_playback_state_update(self):
         """Handle a notification that the HyperDeck playback state has changed"""
-        await self._websocket.notify(HYPERDECK_PLAYBACK_EVENT)
+        await self._websocket.notify(HYPERDECK_STATUS_EVENT)
 
     async def _handle_hyperdeck_clip_list_update(self):
         """Handle a notification that the HyperDeck clip list has changed"""
