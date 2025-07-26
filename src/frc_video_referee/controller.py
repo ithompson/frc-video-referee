@@ -2,6 +2,7 @@ import asyncio
 import enum
 import logging
 from datetime import datetime
+import uuid
 
 from pydantic import BaseModel
 from frc_video_referee import db
@@ -173,6 +174,9 @@ class VARController:
 
         return match_id
 
+    def _create_event_id(self) -> str:
+        return uuid.uuid4().hex
+
     def _get_current_match_time(self) -> float:
         """Get the current match time in seconds."""
         if self._current_match is None:
@@ -272,6 +276,7 @@ class VARController:
 
             self._add_match_event(
                 MatchEvent(
+                    event_id=self._create_event_id(),
                     event_type=MatchEventType.AUTO_SCORING,
                     time=self._get_current_match_time()
                     + self._settings.auto_scoring_delay,
@@ -293,6 +298,7 @@ class VARController:
             if self._state == ControllerState.Recording:
                 self._add_match_event(
                     MatchEvent(
+                        event_id=self._create_event_id(),
                         event_type=MatchEventType.ENDGAME_SCORING,
                         time=self._get_current_match_time()
                         + self._settings.endgame_scoring_delay,
