@@ -11,6 +11,7 @@ from frc_video_referee.hyperdeck.model import (
     Clip,
     ClipList,
     ClipResponse,
+    EventData,
     EventMessage,
     InboundWebsocketMessage,
     PlaybackState,
@@ -113,7 +114,7 @@ class HyperdeckClient:
 
     async def _run_internal(self, client: httpx.AsyncClient) -> None:
         async with websockets.connect(
-            f"ws://{self._settings.address}/control/api/v1/events/websocket"
+            f"ws://{self._settings.address}/control/api/v1/event/websocket"
         ) as websocket:
             logger.info("HyperDeck connection established")
             self._connected = True
@@ -149,12 +150,14 @@ class HyperdeckClient:
                                 else:
                                     raise RuntimeError("HyperDeck subscription failed")
                         case EventMessage():
-                            logger.info(
-                                f"Received event: {message.data.property} = {message.data.value}"
-                            )
-                            await self._handle_property_change(
-                                message.data.property, message.data.value
-                            )
+                            match message.data:
+                                case EventData():
+                                    logger.info(
+                                        f"Received event: {message.data.property} = {message.data.value}"
+                                    )
+                                    await self._handle_property_change(
+                                        message.data.property, message.data.value
+                                    )
             finally:
                 self._connected = False
                 logger.info("HyperDeck connection closed")
@@ -193,7 +196,7 @@ class HyperdeckClient:
         if old_clip_keys != new_clip_keys:
             await self._notify(HyperdeckNotifier.CLIP_LIST_UPDATED)
 
-    async def start_recording(self, clip_name: str | None = None) -> int:
+    async def start_recording(self, clip_name: str | None = None) -> None:
         """Start recording a new clip and return the ID in the HyperDeck"""
         request = RecordRequest(clipName=clip_name)
         response = await self._client.post(
@@ -202,31 +205,25 @@ class HyperdeckClient:
         )
         response.raise_for_status()
 
-        # Retrieve the new clip's metadata
-        response = await self._client.get("/transports/0/clip")
-        response.raise_for_status()
-        clip_data = ClipResponse.model_validate_json(response.text)
-        assert clip_data.clip is not None, "Clip data should not be None"
-        self._clips[clip_data.clip.clipUniqueId] = clip_data.clip
-        await self._notify(HyperdeckNotifier.CLIP_LIST_UPDATED)
+        logger.info(f"Started recording clip: {clip_name}")
 
-        logger.info(
-            f"Started recording clip: {clip_name} with ID {clip_data.clip.clipUniqueId}"
-        )
-        return clip_data.clip.clipUniqueId
-
-    async def stop_recording(self) -> None:
+    async def stop_recording(self) -> int:
         """Stop the current recording."""
         response = await self._client.post("/transports/0/stop")
         response.raise_for_status()
         logger.info("Stopped recording")
+
+        await asyncio.sleep(0.5)  # Give HyperDeck time to finalize the clip
 
         # Refresh the clip's metadata now that the recording has stopped
         response = await self._client.get("/transports/0/clip")
         response.raise_for_status()
         clip_data = ClipResponse.model_validate_json(response.text)
         assert clip_data.clip is not None, "Clip data should not be None"
+        logger.info(f"Stopped recording clip, ID is {clip_data.clip.clipUniqueId}")
         self._clips[clip_data.clip.clipUniqueId] = clip_data.clip
+        await self._notify(HyperdeckNotifier.CLIP_LIST_UPDATED)
+        return clip_data.clip.clipUniqueId
 
     def _get_timeline_position(self, clip_id: int, time_frames: int) -> int:
         """Get the timeline position for a specific clip and time frame."""
@@ -262,7 +259,7 @@ class HyperdeckClient:
             type=PlaybackType.Jog,
             loop=False,
             singleClip=True,
-            speed=1.0,
+            speed=0.0,
             position=timeline_position,
         )
         response = await self._client.put(

@@ -236,7 +236,7 @@ class MatchResultWithSummary(MatchResult):
 class MatchWithResultAndSummary(Match):
     """Match schedule information with its results"""
 
-    result: Annotated[MatchResultWithSummary, Field(alias="Result")]
+    result: Annotated[MatchResultWithSummary | None, Field(alias="Result")]
     """Results of the match, including final scores"""
 
 
