@@ -8,7 +8,14 @@
   import VerticalList from "./var_panel/VerticalList.svelte";
   import EventCard from "./var_panel/EventCard.svelte";
   import ScoreCards from "./var_panel/ScoreCards.svelte";
-  import { PLACEHOLDER_SCORE, PLACEHOLDER_SCORE_SUMMARY } from "./lib/model";
+  import {
+    MatchStatus,
+    MatchType,
+    PLACEHOLDER_MATCH,
+    PLACEHOLDER_SCORE,
+    PLACEHOLDER_SCORE_SUMMARY,
+    type VARMatch,
+  } from "./lib/model";
 
   interface Props {
     ws: WebSocketClient;
@@ -16,25 +23,69 @@
 
   let { ws }: Props = $props();
 
-  let displayed_match = $derived(server_state.current_match);
-
+  let current_match = $derived(
+    server_state.matches[
+      server_state.controller_status.selected_match_id ?? ""
+    ],
+  );
   let realtime_data = $derived(server_state.controller_status.realtime_data);
-  let red_score = $derived(
-    realtime_data ? server_state.realtime_score.red.score : PLACEHOLDER_SCORE,
+
+  let displayed_arena_match = $derived(
+    (() => {
+      if (realtime_data) {
+        return server_state.realtime_match;
+      } else {
+        if (current_match) {
+          return (
+            current_match.arena_data ?? {
+              id: current_match.var_data.arena_id,
+              match_type: MatchType.TEST,
+              type_order: 0,
+              long_name: current_match.var_data.var_id,
+              short_name: current_match.var_data.var_id,
+              red1: 0,
+              red2: 0,
+              red3: 0,
+              blue1: 0,
+              blue2: 0,
+              blue3: 0,
+              status: MatchStatus.SCHEDULED,
+            }
+          );
+        } else {
+          return PLACEHOLDER_MATCH;
+        }
+      }
+    })(),
   );
-  let blue_score = $derived(
-    realtime_data ? server_state.realtime_score.blue.score : PLACEHOLDER_SCORE,
-  );
-  let red_score_summary = $derived(
-    realtime_data
-      ? server_state.realtime_score.red.score_summary
-      : PLACEHOLDER_SCORE_SUMMARY,
-  );
-  let blue_score_summary = $derived(
-    realtime_data
-      ? server_state.realtime_score.blue.score_summary
-      : PLACEHOLDER_SCORE_SUMMARY,
-  );
+
+  let { red_score, blue_score, red_score_summary, blue_score_summary } =
+    $derived(
+      (() => {
+        if (realtime_data) {
+          return {
+            red_score: server_state.realtime_score.red.score,
+            blue_score: server_state.realtime_score.blue.score,
+            red_score_summary: server_state.realtime_score.red.score_summary,
+            blue_score_summary: server_state.realtime_score.blue.score_summary,
+          };
+        } else if (current_match.arena_data) {
+          return {
+            red_score: current_match.arena_data.result.red_score,
+            blue_score: current_match.arena_data.result.blue_score,
+            red_score_summary: current_match.arena_data.result.red_summary,
+            blue_score_summary: current_match.arena_data.result.blue_summary,
+          };
+        } else {
+          return {
+            red_score: PLACEHOLDER_SCORE,
+            blue_score: PLACEHOLDER_SCORE,
+            red_score_summary: PLACEHOLDER_SCORE_SUMMARY,
+            blue_score_summary: PLACEHOLDER_SCORE_SUMMARY,
+          };
+        }
+      })(),
+    );
 
   let sorted_matches = $derived(
     Object.values(server_state.matches).sort((a, b) =>
@@ -46,10 +97,17 @@
     ),
   );
 
-  let event_list = $derived(sorted_matches[0]?.var_data.events || []);
+  let event_list = $derived(current_match?.var_data.events ?? []);
   let event_list_with_idx = $derived(
     event_list.map((event, idx) => ({ event_idx: idx + 1, event })),
   );
+
+  function loadMatch(match: VARMatch) {
+    ws.sendCommand("load_match", { match_id: match.var_data.var_id });
+  }
+  function exitReview() {
+    ws.sendCommand("exit_review", {});
+  }
 </script>
 
 <div class="top-container">
@@ -57,7 +115,7 @@
     server_connected={ws.state.connected}
     arena_connected={server_state.arena_connected}
     hyperdeck_connected={server_state.hyperdeck_connected}
-    match_name={displayed_match.long_name}
+    match_name={displayed_arena_match.long_name}
     match_time_sec={server_state.match_time?.match_time_sec || 0}
     match_timing={server_state.match_timing}
     hyperdeck_status={server_state.hyperdeck_status}
@@ -72,7 +130,7 @@
           {blue_score}
           {red_score_summary}
           {blue_score_summary}
-          match={displayed_match}
+          match={displayed_arena_match}
         />
       </div>
       <div class="flex-spacer" style="flex: 1 1 0%"></div>
@@ -99,13 +157,13 @@
       </VerticalList>
     </div>
     <div class="matches list-container">
-      <button class="go-live">Go Live</button>
+      <button class="go-live" onclick={exitReview}>Go Live</button>
       <VerticalList
         data={sorted_matches}
         key_func={(match) => match.var_data.var_id}
       >
         {#snippet item(data)}
-          <MatchListEntry match={data} />
+          <MatchListEntry match={data} onclick={loadMatch} />
         {/snippet}
       </VerticalList>
     </div>

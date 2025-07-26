@@ -87,7 +87,12 @@ export default class WebSocketClient {
         }
     }
 
-    public send(message: any) {
+    public sendCommand(command_name: string, data: any) {
+        const message = {
+            type: 'command',
+            command: command_name,
+            data: data,
+        }
         this.#ws?.send(JSON.stringify(message));
     }
 }

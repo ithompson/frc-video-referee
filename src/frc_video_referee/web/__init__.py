@@ -5,7 +5,7 @@ FastAPI server for FRC Video Referee application.
 from copy import copy
 from pathlib import Path
 import logging
-from typing import Callable, Dict, NamedTuple, Set
+from typing import Awaitable, Callable, Dict, Generic, NamedTuple, Set, TypeVar
 
 from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
@@ -16,6 +16,7 @@ from pydantic import BaseModel, ValidationError
 
 from frc_video_referee.web.model import (
     InboundWebsocketMessage,
+    WebsocketCommand,
     WebsocketEvent,
     WebsocketSubscribeRequest,
     WebsocketSubscribeResponse,
@@ -25,6 +26,8 @@ from frc_video_referee.web.model import (
 
 logger = logging.getLogger(__name__)
 
+T = TypeVar("T")
+
 
 class WebsocketManager:
     class Notifier(NamedTuple):
@@ -32,8 +35,14 @@ class WebsocketManager:
         emitter: Callable[[], Dict]
         subscribers: Set[WebSocket] = set()
 
+    class CommandHandler(NamedTuple, Generic[T]):
+        command_name: str
+        data_type: type[T]
+        handler: Callable[[T], Awaitable[None]]
+
     def __init__(self):
         self._notifiers: Dict[str, WebsocketManager.Notifier] = {}
+        self._commands: Dict[str, WebsocketManager.CommandHandler] = {}
         self._clients: Set[WebSocket] = set()
 
     def add_event_type(self, event_type: str, emitter: Callable[[], Dict]):
@@ -45,6 +54,20 @@ class WebsocketManager:
             event_type=event_type, emitter=emitter
         )
         logger.debug(f"Registering event type: {event_type}")
+
+    def add_command_handler(
+        self,
+        command_name: str,
+        data_type: type[T],
+        handler: Callable[[T], Awaitable[None]],
+    ):
+        """Add a command handler for a specific command type."""
+        if command_name in self._notifiers:
+            raise ValueError(f"Command handler for '{command_name}' already exists.")
+        self._commands[command_name] = WebsocketManager.CommandHandler(
+            command_name=command_name, data_type=data_type, handler=handler
+        )
+        logger.debug(f"Registered command handler for: {command_name}")
 
     async def notify(self, event_type: str, data: Dict | None = None):
         """Notify all subscribers of a specific event type."""
@@ -144,6 +167,29 @@ class WebsocketManager:
                         await websocket.send_text(
                             response.model_dump_json(exclude_none=True)
                         )
+                    case WebsocketCommand():
+                        # Handle a custom command
+                        command_name = msg.command
+                        if command_name not in self._commands:
+                            logger.error(f"Unknown command '{command_name}'")
+                            continue
+                        command_handler = self._commands[command_name]
+                        try:
+                            command_data = command_handler.data_type.model_validate(
+                                msg.data
+                            )
+                        except ValidationError as e:
+                            logger.error(
+                                f"Invalid data for a {command_name} command: {e}"
+                            )
+                            continue
+                        try:
+                            await command_handler.handler(command_data)
+                        except Exception as e:
+                            logger.exception(
+                                f"Error handling command '{command_name}': {e}"
+                            )
+                            continue
         finally:
             logger.info(f"WebSocket client 0x{id(websocket):x} disconnected")
             self._clients.discard(websocket)

@@ -6,7 +6,7 @@ export interface ServerState {
     controller_status: ControllerStatus;
 
     matches: VARMatchTable;
-    current_match: Match;
+    realtime_match: Match;
     realtime_score: RealtimeScore;
     match_timing: MatchTiming;
     match_time: MatchTime;
@@ -24,7 +24,7 @@ export const server_state: ServerState = $state({
     },
 
     matches: {},
-    current_match: {
+    realtime_match: {
         id: 0,
         match_type: MatchType.TEST,
         type_order: 0,

@@ -192,6 +192,21 @@ export interface Match {
     status: MatchStatus;
 }
 
+export const PLACEHOLDER_MATCH: Match = {
+    id: 0,
+    match_type: MatchType.TEST,
+    type_order: 0,
+    long_name: '',
+    short_name: '',
+    red1: 0,
+    red2: 0,
+    red3: 0,
+    blue1: 0,
+    blue2: 0,
+    blue3: 0,
+    status: MatchStatus.SCHEDULED,
+}
+
 export interface MatchResult {
     /** Internal arena ID for the match */
     match_id: number;

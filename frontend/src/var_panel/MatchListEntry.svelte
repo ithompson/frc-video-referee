@@ -3,11 +3,17 @@
 
     interface Props {
         match: VARMatch;
+        onclick?: (match: VARMatch) => void;
     }
-    let { match }: Props = $props();
+    let { match, onclick }: Props = $props();
 </script>
 
-<div class="match-card">
+<div
+    class="match-card"
+    role="button"
+    tabindex="0"
+    onclick={() => onclick?.(match)}
+>
     <div class="card-header">{match.var_data.var_id}</div>
     <div class="match-details">
         <div class="match-section alliance red">273 - 109</div>

@@ -10,6 +10,12 @@ from frc_video_referee.db.model import MatchEvent, MatchEventType, RecordedMatch
 from frc_video_referee.hyperdeck.client import HyperdeckClient, HyperdeckNotifier
 from frc_video_referee.cheesy_arena.client import ArenaNotifier, CheesyArenaClient
 from frc_video_referee.hyperdeck.model import PlaybackType
+from frc_video_referee.model import (
+    AddVARReviewCommand,
+    ExitReviewCommand,
+    LoadMatchCommand,
+    WarpToTimeCommand,
+)
 from frc_video_referee.web import WebsocketManager
 from frc_video_referee.web.model import (
     ControllerStatus,
@@ -170,6 +176,27 @@ class VARController:
         )
         self._websocket.add_event_type(
             HYPERDECK_STATUS_EVENT, self._get_hyperdeck_status_event
+        )
+
+        self._websocket.add_command_handler(
+            "load_match",
+            LoadMatchCommand,
+            self._handle_load_match_command,
+        )
+        self._websocket.add_command_handler(
+            "warp_to_time",
+            WarpToTimeCommand,
+            self._handle_warp_to_time_command,
+        )
+        self._websocket.add_command_handler(
+            "add_var_review",
+            AddVARReviewCommand,
+            self._handle_add_var_review_command,
+        )
+        self._websocket.add_command_handler(
+            "exit_review",
+            ExitReviewCommand,
+            self._handle_exit_review_command,
         )
 
     #########################################
@@ -448,3 +475,74 @@ class VARController:
         """Handle a notification that the HyperDeck clip list has changed"""
         # TODO: propagate update to the UI
         pass
+
+    #########################################
+    # Handlers for commands from the VAR UI #
+    #########################################
+
+    async def _handle_load_match_command(self, command: LoadMatchCommand):
+        """Handle a command to load a match for review."""
+        async with self._lock:
+            if (
+                self._state == ControllerState.Idle
+                or self._state == ControllerState.ReviewingHistoricalMatch
+            ):
+                if command.match_id not in self._matches:
+                    logger.error(f"Match {command.match_id} not found")
+                    return
+
+                self._current_match = self._matches[command.match_id]
+                self._state = ControllerState.ReviewingHistoricalMatch
+                if self._current_match.var_data.clip_id:
+                    await self._hyperdeck.warp_to_clip(
+                        self._current_match.var_data.clip_id, 0.0
+                    )
+                await self._websocket.notify(CONTROLLER_STATUS_EVENT)
+
+    async def _handle_warp_to_time_command(self, command: WarpToTimeCommand):
+        """Handle a command to warp the video player to a specific time."""
+        async with self._lock:
+            if self._state != ControllerState.ReviewingHistoricalMatch:
+                return
+            if (
+                self._current_match is None
+                or self._current_match.var_data.var_id != command.match_id
+            ):
+                # Race condition, ignore the command
+                return
+            if self._current_match.var_data.clip_id is None:
+                # No recording to warp
+                return
+            await self._hyperdeck.warp_to_clip(
+                self._current_match.var_data.clip_id, command.time
+            )
+
+    async def _handle_add_var_review_command(self, command: AddVARReviewCommand):
+        """Handle a command to add a VAR review event to the current match."""
+        async with self._lock:
+            if self._state != ControllerState.Recording:
+                logger.warning(
+                    "Cannot currently add VAR review event when not recording"
+                )
+                return
+            assert self._current_match is not None, "Recording but no current match"
+            if self._current_match.var_data.var_id != command.match_id:
+                logger.warning(
+                    f"Cannot add VAR review event for match {command.match_id} when current match is {self._current_match.var_data.var_id}"
+                )
+                return
+            event = MatchEvent(
+                event_id=self._create_event_id(),
+                event_type=MatchEventType.VAR_REVIEW,
+                time=command.time,
+            )
+            self._add_match_event(event)
+            await self._websocket.notify(MATCH_LIST_EVENT)
+
+    async def _handle_exit_review_command(self, _command: ExitReviewCommand):
+        """Handle a command to exit review mode and go to the live view."""
+        async with self._lock:
+            if self._state == ControllerState.ReviewingHistoricalMatch:
+                await self._save_and_unload_current_match()
+                self._set_state(ControllerState.Idle)
+                await self._websocket.notify(CONTROLLER_STATUS_EVENT)

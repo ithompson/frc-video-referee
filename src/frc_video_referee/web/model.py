@@ -89,8 +89,19 @@ class WebsocketUnsubscribeResponse(BaseModel):
     """Optional request ID for tracking the unsubscription response"""
 
 
+class WebsocketCommand(BaseModel):
+    """Websocket command wrapper"""
+
+    type: Literal["command"] = "command"
+    """Type of the message, always 'command' for command requests"""
+    command: str
+    """Name of the command being requested"""
+    data: dict
+    """Data associated with the command request, serialized as a dictionary"""
+
+
 InboundWebsocketMessage = TypeAdapter(
-    WebsocketSubscribeRequest | WebsocketUnsubscribeRequest
+    WebsocketSubscribeRequest | WebsocketUnsubscribeRequest | WebsocketCommand
 )
 OutboundWebsocketMessage = TypeAdapter(
     WebsocketEvent | WebsocketSubscribeResponse | WebsocketUnsubscribeResponse

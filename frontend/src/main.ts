@@ -12,7 +12,7 @@ ws.subscribe(WebsocketEventType.ControllerStatus, (data) => {
   server_state.controller_status = data as ControllerStatus;
 });
 ws.subscribe(WebsocketEventType.CurrentMatchData, (data) => {
-  server_state.current_match = data as Match;
+  server_state.realtime_match = data as Match;
 });
 ws.subscribe(WebsocketEventType.CurrentMatchTime, (data) => {
   server_state.match_time = data as MatchTime;
