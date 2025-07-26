@@ -210,6 +210,47 @@ export enum HyperdeckTransportMode {
     Output = "Output",
 }
 
+export enum MatchEventType {
+    AUTO_SCORING = "auto_scoring",
+    ENDGAME_SCORING = "endgame_scoring",
+    VAR_REVIEW = "var_review",
+    HR_REVIEW = "hr_review",
+    ROBOT_DISCONNECT = "robot_disconnect"
+}
+
+export interface EventCoordinates {
+    x: number;
+    y: number;
+}
+
+export interface MatchEvent {
+    event_id: string;
+    event_type: MatchEventType;
+    time: number;
+    team_id?: string;
+    reason?: string;
+    coordinates?: EventCoordinates;
+}
+
+export interface RecordedMatch {
+    var_id: string;
+    arena_id: number;
+    clip_id?: number;
+    clip_file_name: string;
+    timestamp: string;
+    events: MatchEvent[];
+}
+
+export interface VARMatch {
+    var_data: RecordedMatch;
+    arena_data: MatchWithResultAndSummary | null;
+    clip_available: boolean;
+}
+
+export interface VARMatchTable {
+    [index: string]: VARMatch;
+}
+
 export interface ControllerStatus {
     selected_match_id: number | null;
     recording: boolean;

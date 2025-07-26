@@ -1,5 +1,19 @@
 <script lang="ts">
-    let fps = 60;
+    import { getEventTypeColor } from "../lib/events";
+    import type { MatchEvent } from "../lib/model";
+
+    interface EventWithIdx {
+        event_idx: number;
+        event: MatchEvent;
+    }
+
+    interface Props {
+        events: EventWithIdx[];
+    }
+
+    let { events }: Props = $props();
+
+    let fps = 59.94;
     let auto_duration_sec = 15;
     let pause_duration_sec = 3;
     let teleop_duration_sec = 135;
@@ -12,14 +26,14 @@
     let total_recording_duration = teleop_end_time + scoring_capture_sec;
 
     let total_time = total_recording_duration * fps; // Total time in frames for the clip
-    let events = [
-        { time: 0, color: "var(--blue-200)" },
-        { time: (auto_end_time + 3) * fps, color: "var(--green-200)" },
-        { time: 5000, color: "var(--blue-200)" },
-        { time: 2000, color: "var(--auto-inactive)" },
-        { time: (teleop_end_time + 3) * fps, color: "var(--green-200)" },
-        { time: 8000, color: "var(--red-200)" },
-    ];
+    let event_points = $derived(
+        events.map((event) => ({
+            label: String(event.event_idx),
+            time: event.event.time * fps,
+            color: getEventTypeColor(event.event.event_type),
+        })),
+    );
+
     let periods = [
         {
             name: "auto",
@@ -34,8 +48,6 @@
     ];
 
     let timeline_pos = $state(total_time / 2);
-
-    const sorted_events = $derived(events.sort((a, b) => a.time - b.time));
 
     function handlePointClick(event: MouseEvent) {
         const target = event.currentTarget as HTMLButtonElement;
@@ -71,8 +83,8 @@
 
 <div class="timeline">
     <div class="timeline-points">
-        {#each sorted_events as event, index}
-            {@render timelinePoint(event.time, String(index + 1), event.color)}
+        {#each event_points as point}
+            {@render timelinePoint(point.time, point.label, point.color)}
         {/each}
     </div>
     <div class="slider-container">

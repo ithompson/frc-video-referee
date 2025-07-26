@@ -270,15 +270,16 @@ class VARController:
             await self._save_and_unload_current_match(update_hyperdeck=False)
             self._set_state(ControllerState.Recording)
 
-            match_timestamp = datetime.now().astimezone()
             match_id = self._create_id_for_current_match()
-            logger.info(
-                f"Starting recording of match {match_id} at {match_timestamp.isoformat()}"
-            )
 
             recording_name = match_id
             clip_id = await self._hyperdeck.start_recording(recording_name)
             logger.debug(f"HyperDeck clip ID: {clip_id} with filename {recording_name}")
+
+            match_timestamp = datetime.now().astimezone()
+            logger.info(
+                f"Started recording of match {match_id} at {match_timestamp.isoformat()}"
+            )
 
             self._current_match = MatchListEntry(
                 var_data=RecordedMatch(
@@ -288,6 +289,7 @@ class VARController:
                     timestamp=match_timestamp,
                 )
             )
+            self._matches[match_id] = self._current_match
             self._db.save_match(self._current_match.var_data)
             await self._websocket.notify(CONTROLLER_STATUS_EVENT)
             await self._websocket.notify(MATCH_LIST_EVENT)
@@ -407,8 +409,7 @@ class VARController:
 
     async def _handle_match_data_update(self):
         """Handle a notification that the match data has changed"""
-        # TODO: propagate update to the UI
-        pass
+        await self._websocket.notify(CURRENT_MATCH_DATA_EVENT)
 
     async def _handle_match_time_update(self):
         """Handle a notification that the match time has changed"""

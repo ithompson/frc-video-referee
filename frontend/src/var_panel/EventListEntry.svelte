@@ -1,7 +1,22 @@
+<script lang="ts">
+    import { getEventTypeColor, getEventTypeString } from "../lib/events";
+    import type { MatchEvent } from "../lib/model";
+
+    interface Props {
+        event_idx: number;
+        event: MatchEvent;
+    }
+    let { event_idx, event }: Props = $props();
+</script>
+
 <div class="event-card">
     <div class="card-header">
-        <span class="event-idx">2</span>
-        <span class="event-label">VAR Review</span>
+        <span class="event-idx">{event_idx}</span>
+        <span
+            class="event-label"
+            style="background-color: {getEventTypeColor(event.event_type)}"
+            >{getEventTypeString(event.event_type)}</span
+        >
         <span class="event-spacer"></span>
     </div>
     <div class="event-details">
@@ -37,7 +52,6 @@
 
         & .event-label {
             color: var(--text-active-dark);
-            background-color: var(--green-200);
             border-radius: 16px;
             padding: 0 0.5em;
             min-width: 6em;

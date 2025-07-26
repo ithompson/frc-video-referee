@@ -35,6 +35,21 @@
       ? server_state.realtime_score.blue.score_summary
       : PLACEHOLDER_SCORE_SUMMARY,
   );
+
+  let sorted_matches = $derived(
+    Object.values(server_state.matches).sort((a, b) =>
+      a.var_data.timestamp < b.var_data.timestamp
+        ? 1
+        : b.var_data.timestamp < a.var_data.timestamp
+          ? -1
+          : 0,
+    ),
+  );
+
+  let event_list = $derived(sorted_matches[0]?.var_data.events || []);
+  let event_list_with_idx = $derived(
+    event_list.map((event, idx) => ({ event_idx: idx + 1, event })),
+  );
 </script>
 
 <div class="top-container">
@@ -64,22 +79,28 @@
         <EventCard />
       </div>
       <div class="timeline-container">
-        <Timeline />
+        <Timeline events={event_list_with_idx} />
       </div>
     </div>
     <div class="events list-container">
       <button class="add-event">Add VAR Review</button>
-      <VerticalList>
-        {#snippet item()}
-          <EventListEntry />
+      <VerticalList
+        data={event_list_with_idx.reverse()}
+        key_func={(event) => event.event.event_id}
+      >
+        {#snippet item(data)}
+          <EventListEntry event_idx={data.event_idx} event={data.event} />
         {/snippet}
       </VerticalList>
     </div>
     <div class="matches list-container">
       <button class="go-live">Go Live</button>
-      <VerticalList>
-        {#snippet item()}
-          <MatchListEntry />
+      <VerticalList
+        data={sorted_matches}
+        key_func={(match) => match.var_data.var_id}
+      >
+        {#snippet item(data)}
+          <MatchListEntry match={data} />
         {/snippet}
       </VerticalList>
     </div>

@@ -235,6 +235,8 @@ class HyperdeckClient:
             )
             return 0
 
+        logger.critical(f"timeline_clip: {timeline_clip.model_dump()}")
+
         frame_in_clip = time_frames
         frame_in_clip = max(
             timeline_clip.clipIn, frame_in_clip
@@ -253,8 +255,12 @@ class HyperdeckClient:
             raise ValueError(f"Clip ID '{clip_id}' not found in HyperDeck") from None
 
         time_frames = int(time_sec * clip.videoFormat.frameRate)
+        logger.critical(
+            f"Warping to clip {clip_id} at {time_sec} seconds. Framerate {clip.videoFormat.frameRate}, time frames {time_frames}"
+        )
 
         timeline_position = self._get_timeline_position(clip_id, time_frames)
+        logger.critical(f"Final timeline position: {timeline_position}")
         request = PlaybackState(
             type=PlaybackType.Jog,
             loop=False,
@@ -262,6 +268,11 @@ class HyperdeckClient:
             speed=0.0,
             position=timeline_position,
         )
+        response = await self._client.put(
+            "/transports/0/playback", content=request.model_dump_json()
+        )
+        response.raise_for_status()
+        # Do it again after the clip loads to actually set the time?
         response = await self._client.put(
             "/transports/0/playback", content=request.model_dump_json()
         )

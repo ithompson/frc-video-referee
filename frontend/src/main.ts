@@ -2,7 +2,7 @@ import { mount } from 'svelte'
 import './app.css'
 import App from './App.svelte'
 import WebSocketClient from './lib/wsclient.svelte'
-import { HyperdeckTransportMode, WebsocketEventType, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type RealtimeScore } from './lib/model'
+import { HyperdeckTransportMode, WebsocketEventType, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type RealtimeScore, type VARMatchTable } from './lib/model'
 import { server_state } from './lib/server_state.svelte'
 
 const websocketAddress = import.meta.env.DEV ? 'rho.local:8000' : window.location.host;
@@ -21,7 +21,7 @@ ws.subscribe(WebsocketEventType.RealtimeScore, (data) => {
   server_state.realtime_score = data as RealtimeScore;
 });
 ws.subscribe(WebsocketEventType.MatchList, (data) => {
-  console.log('Match list updated:', data);
+  server_state.matches = data as VARMatchTable;
 });
 ws.subscribe(WebsocketEventType.ArenaConnection, (data) => {
   server_state.arena_connected = data.connected;

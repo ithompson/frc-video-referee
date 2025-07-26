@@ -1,5 +1,14 @@
+<script lang="ts">
+    import type { VARMatch } from "../lib/model";
+
+    interface Props {
+        match: VARMatch;
+    }
+    let { match }: Props = $props();
+</script>
+
 <div class="match-card">
-    <div class="card-header">Q3 Replay 1</div>
+    <div class="card-header">{match.var_data.var_id}</div>
     <div class="match-details">
         <div class="match-section alliance red">273 - 109</div>
         <div class="match-section team-lists">

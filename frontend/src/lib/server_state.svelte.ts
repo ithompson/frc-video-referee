@@ -1,10 +1,11 @@
-import { HyperdeckTransportMode, MatchState, MatchStatus, MatchType, PLACEHOLDER_REALTIME_SCORE, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type RealtimeScore } from './model';
+import { HyperdeckTransportMode, MatchState, MatchStatus, MatchType, PLACEHOLDER_REALTIME_SCORE, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type RealtimeScore, type VARMatchTable } from './model';
 
 export interface ServerState {
     arena_connected: boolean;
     hyperdeck_connected: boolean;
     controller_status: ControllerStatus;
 
+    matches: VARMatchTable;
     current_match: Match;
     realtime_score: RealtimeScore;
     match_time: MatchTime;
@@ -21,6 +22,7 @@ export const server_state: ServerState = $state({
         realtime_data: true,
     },
 
+    matches: {},
     current_match: {
         id: 0,
         match_type: MatchType.TEST,
