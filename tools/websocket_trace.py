@@ -15,7 +15,7 @@ import websockets
 
 
 async def main():
-    ws_url = "ws://localhost:8001/control/api/v1/events/websocket"
+    ws_url = "ws://hyperdeck-shuttle-hd.local/control/api/v1/event/websocket"
 
     async with websockets.connect(ws_url) as websocket:
         subscribe_msg = {

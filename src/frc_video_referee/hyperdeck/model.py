@@ -102,7 +102,7 @@ class Clip(BaseModel):
     """Codec and container format used for the clip"""
     videoFormat: VideoFormat
     """Video format of the clip"""
-    startTimecode: str
+    startTimecode: str | None = None
     """Start timecode of the clip in HH:MM:SS:FF format"""
     durationTimecode: str
     """Duration of the clip in HH:MM:SS:FF format"""
@@ -233,9 +233,14 @@ class EventData(BaseModel):
     """New value of the property"""
 
 
+class WebsocketConnectedMessage(BaseModel):
+    action: Literal["websocketOpened"]
+    """Indicates that the websocket connection was established successfully"""
+
+
 class EventMessage(BaseModel):
     type: Literal["event"]
-    data: EventData
+    data: EventData | WebsocketConnectedMessage
     """Event data containing the property name and its new value"""
 
 
