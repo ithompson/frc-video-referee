@@ -14,6 +14,7 @@
         hide_rp: boolean;
         toggle_rp?: () => void;
         toggle_final_score?: () => void;
+        final_score_on_right: boolean;
     }
     let {
         is_blue,
@@ -24,6 +25,7 @@
         hide_rp,
         toggle_rp,
         toggle_final_score,
+        final_score_on_right,
     }: Props = $props();
 
     let l1_total = $derived(score.reef.trough_near + score.reef.trough_far);
@@ -87,7 +89,7 @@
 {/snippet}
 
 <div class="alliance-score" class:red={!is_blue} class:blue={is_blue}>
-    <div class="score-header">
+    <div class="score-header" class:swap={final_score_on_right}>
         <div
             class="score-total"
             role="button"
@@ -207,6 +209,10 @@
             align-items: center;
             margin-top: 10px;
 
+            &.swap {
+                flex-direction: row-reverse;
+            }
+
             & .score-total {
                 background-color: var(--alliance-overlay-background);
                 border-radius: 8px;
@@ -216,10 +222,6 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-            }
-
-            .blue & .score-total {
-                order: 3;
             }
 
             & .score-banner {

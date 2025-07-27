@@ -1,6 +1,7 @@
-import { DEFAULT_MATCH_TIMING, HyperdeckTransportMode, MatchState, MatchStatus, MatchType, PLACEHOLDER_REALTIME_SCORE, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type MatchTiming, type RealtimeScore, type VARMatchTable } from './model';
+import { DEFAULT_MATCH_TIMING, DEFAULT_UI_SETTINGS, HyperdeckTransportMode, MatchState, MatchStatus, MatchType, PLACEHOLDER_REALTIME_SCORE, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type MatchTiming, type RealtimeScore, type UISettings, type VARMatchTable } from './model';
 
 export interface ServerState {
+    ui_settings: UISettings;
     arena_connected: boolean;
     hyperdeck_connected: boolean;
     controller_status: ControllerStatus;
@@ -15,6 +16,7 @@ export interface ServerState {
 
 /** All state reported by the server to websocket clients */
 export const server_state: ServerState = $state({
+    ui_settings: DEFAULT_UI_SETTINGS,
     arena_connected: false,
     hyperdeck_connected: false,
     controller_status: {

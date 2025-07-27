@@ -9,6 +9,7 @@
         red_score_summary: ScoreSummary;
         blue_score_summary: ScoreSummary;
         match: Match;
+        swap: boolean;
     }
     let {
         hide_scores,
@@ -17,23 +18,14 @@
         red_score_summary,
         blue_score_summary,
         match,
+        swap,
     }: Props = $props();
 
     let hide_rp = $state(true);
     let hide_final_score = $state(true);
 </script>
 
-<div class="score-root">
-    <AllianceScoreCard
-        is_blue={false}
-        score={red_score}
-        score_summary={red_score_summary}
-        teams={[match.red1, match.red2, match.red3]}
-        hide_final_score={hide_scores && hide_final_score}
-        hide_rp={hide_scores && hide_rp}
-        toggle_final_score={() => (hide_final_score = !hide_final_score)}
-        toggle_rp={() => (hide_rp = !hide_rp)}
-    />
+<div class="score-root" class:swap>
     <AllianceScoreCard
         is_blue={true}
         score={blue_score}
@@ -43,6 +35,18 @@
         hide_rp={hide_scores && hide_rp}
         toggle_final_score={() => (hide_final_score = !hide_final_score)}
         toggle_rp={() => (hide_rp = !hide_rp)}
+        final_score_on_right={!swap}
+    />
+    <AllianceScoreCard
+        is_blue={false}
+        score={red_score}
+        score_summary={red_score_summary}
+        teams={[match.red1, match.red2, match.red3]}
+        hide_final_score={hide_scores && hide_final_score}
+        hide_rp={hide_scores && hide_rp}
+        toggle_final_score={() => (hide_final_score = !hide_final_score)}
+        toggle_rp={() => (hide_rp = !hide_rp)}
+        final_score_on_right={swap}
     />
 </div>
 
@@ -51,5 +55,8 @@
         display: flex;
         flex-direction: row;
         justify-content: space-evenly;
+    }
+    .score-root.swap {
+        flex-direction: row-reverse;
     }
 </style>

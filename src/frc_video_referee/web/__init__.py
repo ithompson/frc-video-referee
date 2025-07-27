@@ -29,6 +29,13 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
+class UISettings(BaseModel):
+    """Settings for the user-facing control and status panels"""
+
+    swap_red_blue: bool = False
+    """Swap the position of the red and blue score panels. The default matches the view from the scoring table"""
+
+
 class WebsocketManager:
     class Notifier(NamedTuple):
         event_type: str
@@ -40,10 +47,18 @@ class WebsocketManager:
         data_type: type[T]
         handler: Callable[[T], Awaitable[None]]
 
-    def __init__(self):
+    def __init__(self, ui_settings: UISettings):
+        self._ui_settings = ui_settings
         self._notifiers: Dict[str, WebsocketManager.Notifier] = {}
         self._commands: Dict[str, WebsocketManager.CommandHandler] = {}
         self._clients: Set[WebSocket] = set()
+        self.add_event_type(
+            "ui_settings", lambda: self._ui_settings.model_dump(exclude_none=True)
+        )
+
+    async def set_ui_settings(self, ui_settings: UISettings):
+        self._ui_settings = ui_settings
+        await self.notify("ui_settings")
 
     def add_event_type(self, event_type: str, emitter: Callable[[], Dict]):
         """Add a notification type to the manager."""
@@ -197,7 +212,7 @@ class WebsocketManager:
                 self._notifiers[event_type].subscribers.discard(websocket)
 
 
-WEBSOCKET_MANAGER = WebsocketManager()
+WEBSOCKET_MANAGER = WebsocketManager(UISettings())
 
 # Simple password-based authentication
 security = HTTPBasic()

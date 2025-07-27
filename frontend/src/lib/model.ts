@@ -1,3 +1,12 @@
+/* Global settings for the frontend panels */
+
+export interface UISettings {
+    swap_red_blue: boolean;
+}
+export const DEFAULT_UI_SETTINGS: UISettings = {
+    swap_red_blue: false,
+}
+
 /* Game-specific score model */
 
 export type ReefRow = [boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean, boolean];
@@ -297,6 +306,7 @@ export interface HyperdeckStatus {
 }
 
 export enum WebsocketEventType {
+    UISettings = "ui_settings",
     ControllerStatus = "controller_status",
     CurrentMatchData = "current_match_data",
     CurrentMatchTime = "current_match_time",

@@ -12,7 +12,7 @@ from .db import DB, DBSettings
 from .controller import VARController, VARSettings
 from .cheesy_arena.client import CheesyArenaClient, ArenaClientSettings
 from .hyperdeck.client import HyperdeckClient, HyperdeckClientSettings
-from .web import ServerSettings, WEBSOCKET_MANAGER, run as run_server
+from .web import ServerSettings, WEBSOCKET_MANAGER, UISettings, run as run_server
 from .utils import ExitServer
 
 
@@ -57,6 +57,9 @@ class Settings(BaseSettings, use_attribute_docstrings=True):
     var: VARSettings = VARSettings()
     """VAR controller settings"""
 
+    ui: UISettings = UISettings()
+    """User-facing panel settings"""
+
     debug: bool = False
     """Enable verbose debug logging"""
 
@@ -89,6 +92,7 @@ async def async_main(settings: Settings) -> None:
     arena = CheesyArenaClient(settings.arena, db)
     hyperdeck = HyperdeckClient(settings.hyperdeck)
     websocket = WEBSOCKET_MANAGER
+    await websocket.set_ui_settings(settings.ui)
 
     _controller = VARController(settings.var, arena, hyperdeck, websocket, db)
 

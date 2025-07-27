@@ -165,6 +165,7 @@
           {red_score_summary}
           {blue_score_summary}
           match={displayed_arena_match}
+          swap={server_state.ui_settings.swap_red_blue}
         />
       </div>
       <div class="flex-spacer" style="flex: 1 1 0%"></div>
