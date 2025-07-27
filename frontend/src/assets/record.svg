@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   enable-background="new 0 0 24 24"
+   height="24"
+   viewBox="0 0 24 24"
+   width="24"
+   fill="#000000"
+   version="1.1"
+   id="svg3"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs3" />
+  <g
+     id="g1"
+     style="display:inline">
+    <path
+       d="M 0,0 H 24 V 24 H 0 Z"
+       fill="none"
+       id="path1" />
+  </g>
+  <g
+     id="g3">
+    <g
+       id="g2">
+      <path
+         d="M 12,2 C 6.49,2 2,6.49 2,12 2,17.51 6.49,22 12,22 17.51,22 22,17.51 22,12 22,6.49 17.51,2 12,2 Z m 0,18 C 7.59,20 4,16.41 4,12 4,7.59 7.59,4 12,4 c 4.41,0 8,3.59 8,8 0,4.41 -3.59,8 -8,8 z"
+         id="path2"
+         style="display:inline" />
+    </g>
+  </g>
+  <circle
+     style="fill:#d1101e;fill-opacity:1;stroke-width:60;stroke-linecap:round;stroke-linejoin:round"
+     id="path3"
+     cx="12.030046"
+     cy="11.963582"
+     r="6.5">
+     <animate
+         attributeName="fill-opacity"
+         values="1;0"
+         begin="0s"
+         dur="1s"
+         calcMode="discrete"
+         repeatCount="indefinite"
+       />
+   </circle>
+</svg>

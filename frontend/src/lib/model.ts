@@ -68,6 +68,7 @@ export const PLACEHOLDER_SCORE: Score = {
 }
 
 export interface ScoreSummary {
+    score: number
     match_points: number
     barge_points: number
     num_coral_levels: number;
@@ -78,6 +79,7 @@ export interface ScoreSummary {
 }
 
 export const PLACEHOLDER_SCORE_SUMMARY = {
+    score: 0,
     match_points: 0,
     barge_points: 0,
     num_coral_levels: 0,

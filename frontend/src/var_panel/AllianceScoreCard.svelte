@@ -98,7 +98,7 @@
             onkeydown={toggle_final_score}
         >
             {#if !hide_final_score}
-                {score_summary.match_points}
+                {score_summary.score}
             {/if}
         </div>
         <div class="score-banner">

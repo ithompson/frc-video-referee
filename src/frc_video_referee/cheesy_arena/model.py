@@ -193,6 +193,9 @@ PLACEHOLDER_SCORE = Score(
 class ScoreSummary(BaseArenaModel):
     """Final score tallies for an alliance in a match."""
 
+    score: Annotated[int, Field(alias="Score")]
+    """Total score for the alliance, including all fouls and adjustments"""
+
     match_points: Annotated[int, Field(alias="MatchPoints")]
     """Total points scored by the alliance in the match"""
 
@@ -216,6 +219,7 @@ class ScoreSummary(BaseArenaModel):
 
 
 PLACEHOLDER_SCORE_SUMMARY = ScoreSummary(
+    score=0,
     match_points=0,
     barge_points=0,
     num_coral_levels=0,

@@ -35,8 +35,7 @@
         {#if match.arena_data}
             {#if result}
                 <div class="match-section {result_style_class}">
-                    {result.red_summary.match_points} - {result.blue_summary
-                        .match_points}
+                    {result.red_summary.score} - {result.blue_summary.score}
                 </div>
             {/if}
             <div class="match-section team-lists">

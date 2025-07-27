@@ -5,6 +5,10 @@
         type HyperdeckStatus,
         type MatchTiming,
     } from "../lib/model";
+    import pause_icon from "../assets/pause.svg";
+    import play_icon from "../assets/play.svg";
+    import live_icon from "../assets/live.svg";
+    import record_icon from "../assets/record.svg";
 
     interface Props {
         server_connected: boolean;
@@ -26,18 +30,18 @@
         hyperdeck_status,
     }: Props = $props();
 
-    let recorder_status = $derived(
+    let recorder_icon = $derived(
         (() => {
             switch (hyperdeck_status.transport_mode) {
                 case HyperdeckTransportMode.InputPreview:
-                    return "Live";
+                    return live_icon;
                 case HyperdeckTransportMode.InputRecord:
-                    return "Record";
+                    return record_icon;
                 case HyperdeckTransportMode.Output:
                     if (hyperdeck_status.playing) {
-                        return "Play";
+                        return play_icon;
                     } else {
-                        return "Pause";
+                        return pause_icon;
                     }
             }
         })(),
@@ -60,7 +64,12 @@
     </div>
     <div class="banner_title">{match_name}</div>
     <div class="banner_data">
-        {formatMatchTime(match_time_sec, match_timing)} ({recorder_status})
+        {formatMatchTime(match_time_sec, match_timing)}
+        <img
+            class="player-status-icon"
+            alt="hyperdeck status icon"
+            src={recorder_icon}
+        />
     </div>
 </header>
 
@@ -126,5 +135,11 @@
             transform: skewX(calc(var(--banner-title-angle) * -1));
             transform-origin: right bottom;
         }
+    }
+
+    .player-status-icon {
+        height: 1.3em;
+        vertical-align: bottom;
+        margin-left: 0.5em;
     }
 </style>
