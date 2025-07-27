@@ -282,6 +282,9 @@ class VARController:
 
             clip_id = await self._hyperdeck.stop_recording()
             self._current_match.var_data.clip_id = clip_id
+            self._current_match.clip_available = self._hyperdeck.has_playable_clip(
+                clip_id
+            )
             self._db.save_match(self._current_match.var_data)
             await self._websocket.notify(MATCH_LIST_EVENT)
             self._set_state(ControllerState.ReviewingCurrentMatch)
