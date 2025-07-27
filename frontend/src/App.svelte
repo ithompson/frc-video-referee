@@ -150,7 +150,7 @@
     arena_connected={server_state.arena_connected}
     hyperdeck_connected={server_state.hyperdeck_connected}
     match_name={displayed_arena_match.long_name}
-    match_time_sec={server_state.match_time?.match_time_sec || 0}
+    match_time_sec={effective_time}
     match_timing={server_state.match_timing}
     hyperdeck_status={server_state.hyperdeck_status}
   />

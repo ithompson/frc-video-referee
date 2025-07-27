@@ -502,7 +502,10 @@ class VARController:
     async def _handle_warp_to_time_command(self, command: WarpToTimeCommand):
         """Handle a command to warp the video player to a specific time."""
         async with self._lock:
-            if self._state != ControllerState.ReviewingHistoricalMatch:
+            if (
+                self._state != ControllerState.ReviewingHistoricalMatch
+                and self._state != ControllerState.ReviewingCurrentMatch
+            ):
                 return
             if (
                 self._current_match is None
