@@ -1,6 +1,10 @@
 <script lang="ts">
     import { formatMatchTime } from "../lib/match_time";
-    import type { HyperdeckStatus, MatchTiming } from "../lib/model";
+    import {
+        HyperdeckTransportMode,
+        type HyperdeckStatus,
+        type MatchTiming,
+    } from "../lib/model";
 
     interface Props {
         server_connected: boolean;
@@ -21,6 +25,23 @@
         match_timing,
         hyperdeck_status,
     }: Props = $props();
+
+    let recorder_status = $derived(
+        (() => {
+            switch (hyperdeck_status.transport_mode) {
+                case HyperdeckTransportMode.InputPreview:
+                    return "Live";
+                case HyperdeckTransportMode.InputRecord:
+                    return "Record";
+                case HyperdeckTransportMode.Output:
+                    if (hyperdeck_status.playing) {
+                        return "Play";
+                    } else {
+                        return "Pause";
+                    }
+            }
+        })(),
+    );
 </script>
 
 {#snippet status(ok: boolean)}
@@ -39,7 +60,7 @@
     </div>
     <div class="banner_title">{match_name}</div>
     <div class="banner_data">
-        {formatMatchTime(match_time_sec, match_timing)} (Pause) 00:00:00.1234
+        {formatMatchTime(match_time_sec, match_timing)} ({recorder_status})
     </div>
 </header>
 
