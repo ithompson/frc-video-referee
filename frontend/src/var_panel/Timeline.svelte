@@ -9,9 +9,12 @@
 
     interface Props {
         events: EventWithIdx[];
+        warpToEvent?: (event: MatchEvent) => void;
+        warpToTime?: (time: number) => void;
+        currentTime: number;
     }
 
-    let { events }: Props = $props();
+    let { events, warpToEvent, warpToTime, currentTime }: Props = $props();
 
     let fps = 59.94;
     let auto_duration_sec = 15;
@@ -26,13 +29,6 @@
     let total_recording_duration = teleop_end_time + scoring_capture_sec;
 
     let total_time = total_recording_duration * fps; // Total time in frames for the clip
-    let event_points = $derived(
-        events.map((event) => ({
-            label: String(event.event_idx),
-            time: event.event.time * fps,
-            color: getEventTypeColor(event.event.event_type),
-        })),
-    );
 
     let periods = [
         {
@@ -47,27 +43,41 @@
         },
     ];
 
-    let timeline_pos = $state(total_time / 2);
+    let timeline_pos = $derived(currentTime * fps);
 
-    function handlePointClick(event: MouseEvent) {
-        const target = event.currentTarget as HTMLButtonElement;
-        timeline_pos = parseInt(target.dataset.time!, 10);
+    function handlePointClick(mouseEvent: MouseEvent) {
+        const target = mouseEvent.currentTarget as HTMLButtonElement;
+        const event_idx = parseInt(target.dataset.eventIdx!, 10);
+        const event = events.find((e) => e.event_idx === event_idx)!.event;
+
+        warpToEvent?.(event);
+        timeline_pos = event.time * fps;
+    }
+
+    function handleSliderChange(event: Event) {
+        const target = event.target as HTMLInputElement;
+        const timeInFrames = parseInt(target.value, 10);
+        const timeInSeconds = timeInFrames / fps;
+
+        warpToTime?.(timeInSeconds);
     }
 </script>
 
-{#snippet timelinePoint(
-    time: number,
-    label: string,
-    color: string = "var(--gray-500)",
-)}
+{#snippet timelinePoint(event: EventWithIdx)}
     <button
         class="point-wrap"
-        style="left: calc(((100% - 20px) * {time / total_time}));"
+        style="left: calc(((100% - 20px) * {(event.event.time * fps) /
+            total_time}));"
         onclick={handlePointClick}
-        data-time={time}
+        data-event-idx={event.event_idx}
     >
-        <div class="point-label" style="background-color: {color};">
-            {label}
+        <div
+            class="point-label"
+            style="background-color: {getEventTypeColor(
+                event.event.event_type,
+            )};"
+        >
+            {event.event_idx}
         </div>
     </button>
 {/snippet}
@@ -83,8 +93,8 @@
 
 <div class="timeline">
     <div class="timeline-points">
-        {#each event_points as point}
-            {@render timelinePoint(point.time, point.label, point.color)}
+        {#each events as event}
+            {@render timelinePoint(event)}
         {/each}
     </div>
     <div class="slider-container">
@@ -97,6 +107,7 @@
             max={total_time - 1}
             class="slider"
             bind:value={timeline_pos}
+            oninput={handleSliderChange}
         />
     </div>
 </div>

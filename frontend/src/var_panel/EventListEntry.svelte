@@ -7,11 +7,17 @@
         event_idx: number;
         event: MatchEvent;
         match_timing: MatchTiming;
+        onclick?: (event: MatchEvent) => void;
     }
-    let { event_idx, event, match_timing }: Props = $props();
+    let { event_idx, event, match_timing, onclick }: Props = $props();
 </script>
 
-<div class="event-card">
+<div
+    class="event-card"
+    role="button"
+    tabindex="0"
+    onclick={() => onclick?.(event)}
+>
     <div class="card-header">
         <span class="event-idx">{event_idx}</span>
         <span

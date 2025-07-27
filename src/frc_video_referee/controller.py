@@ -520,12 +520,8 @@ class VARController:
     async def _handle_add_var_review_command(self, command: AddVARReviewCommand):
         """Handle a command to add a VAR review event to the current match."""
         async with self._lock:
-            if self._state != ControllerState.Recording:
-                logger.warning(
-                    "Cannot currently add VAR review event when not recording"
-                )
+            if self._current_match is None:
                 return
-            assert self._current_match is not None, "Recording but no current match"
             if self._current_match.var_data.var_id != command.match_id:
                 logger.warning(
                     f"Cannot add VAR review event for match {command.match_id} when current match is {self._current_match.var_data.var_id}"

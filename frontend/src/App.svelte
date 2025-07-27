@@ -14,6 +14,7 @@
     PLACEHOLDER_MATCH,
     PLACEHOLDER_SCORE,
     PLACEHOLDER_SCORE_SUMMARY,
+    type MatchEvent,
     type VARMatch,
   } from "./lib/model";
 
@@ -98,12 +99,45 @@
   );
 
   let event_list = $derived(current_match?.var_data.events ?? []);
-  let event_list_with_idx = $derived(
-    event_list.map((event, idx) => ({ event_idx: idx + 1, event })),
+  let sorted_events = $derived(
+    Array.from(event_list).sort((a, b) => a.time - b.time),
+  );
+  let sorted_events_with_idx = $derived(
+    sorted_events.map((event, idx) => ({ event_idx: idx + 1, event })),
+  );
+
+  let effective_time = $derived(
+    server_state.controller_status.recording
+      ? server_state.match_time.match_time_sec
+      : server_state.hyperdeck_status.clip_time,
   );
 
   function loadMatch(match: VARMatch) {
     ws.sendCommand("load_match", { match_id: match.var_data.var_id });
+  }
+  function warpToEvent(event: MatchEvent) {
+    if (current_match) {
+      ws.sendCommand("warp_to_time", {
+        match_id: current_match.var_data.var_id,
+        time: event.time,
+      });
+    }
+  }
+  function warpToTime(time: number) {
+    if (current_match) {
+      ws.sendCommand("warp_to_time", {
+        match_id: current_match.var_data.var_id,
+        time: time,
+      });
+    }
+  }
+  function addVARReview() {
+    if (current_match) {
+      ws.sendCommand("add_var_review", {
+        match_id: current_match.var_data.var_id,
+        time: effective_time,
+      });
+    }
   }
   function exitReview() {
     ws.sendCommand("exit_review", {});
@@ -138,13 +172,18 @@
         <EventCard />
       </div>
       <div class="timeline-container">
-        <Timeline events={event_list_with_idx} />
+        <Timeline
+          events={sorted_events_with_idx}
+          {warpToEvent}
+          {warpToTime}
+          currentTime={effective_time}
+        />
       </div>
     </div>
     <div class="events list-container">
-      <button class="add-event">Add VAR Review</button>
+      <button class="add-event" onclick={addVARReview}>Add VAR Review</button>
       <VerticalList
-        data={event_list_with_idx.reverse()}
+        data={sorted_events_with_idx.reverse()}
         key_func={(event) => event.event.event_id}
       >
         {#snippet item(data)}
@@ -152,6 +191,7 @@
             event_idx={data.event_idx}
             event={data.event}
             match_timing={server_state.match_timing}
+            onclick={warpToEvent}
           />
         {/snippet}
       </VerticalList>
