@@ -199,6 +199,9 @@ class VARController:
             self._handle_exit_review_command,
         )
 
+        self._refresh_hyperdeck_clip_presence()
+        self._refresh_arena_match_data()
+
     #########################################
     # Helpers for managing controller state #
     #########################################
@@ -292,6 +295,19 @@ class VARController:
             time_to_display = auto_end_event.time if auto_end_event else 0.0
             await self._hyperdeck.warp_to_clip(clip_id, time_to_display)
 
+    def _refresh_hyperdeck_clip_presence(self):
+        for var_match in self._matches.values():
+            clip_id = var_match.var_data.clip_id
+            var_match.clip_available = (
+                clip_id is not None and self._hyperdeck.has_playable_clip(clip_id)
+            )
+
+    def _refresh_arena_match_data(self):
+        for var_match in self._matches.values():
+            var_match.arena_data = self._arena.match_results.get(
+                var_match.var_data.arena_id
+            )
+
     #######################################
     # Handlers for match lifecycle events #
     #######################################
@@ -323,7 +339,10 @@ class VARController:
                     arena_id=self._arena.match_data.match_info.id,
                     clip_file_name=recording_name,
                     timestamp=match_timestamp,
-                )
+                ),
+                arena_data=self._arena.match_results.get(
+                    self._arena.match_data.match_info.id
+                ),
             )
             self._matches[match_id] = self._current_match
             self._db.save_match(self._current_match.var_data)
@@ -436,8 +455,8 @@ class VARController:
 
     async def _handle_historical_scores_update(self):
         """Handle a notification that the historical scores have changed"""
-        # TODO: propagate update to the UI
-        pass
+        self._refresh_arena_match_data()
+        await self._websocket.notify(MATCH_LIST_EVENT)
 
     async def _handle_realtime_score_update(self):
         """Handle a notification that the realtime score has changed"""
@@ -473,8 +492,8 @@ class VARController:
 
     async def _handle_hyperdeck_clip_list_update(self):
         """Handle a notification that the HyperDeck clip list has changed"""
-        # TODO: propagate update to the UI
-        pass
+        self._refresh_hyperdeck_clip_presence()
+        await self._websocket.notify(MATCH_LIST_EVENT)
 
     #########################################
     # Handlers for commands from the VAR UI #
@@ -493,10 +512,9 @@ class VARController:
 
                 self._current_match = self._matches[command.match_id]
                 self._state = ControllerState.ReviewingHistoricalMatch
-                if self._current_match.var_data.clip_id:
-                    await self._hyperdeck.warp_to_clip(
-                        self._current_match.var_data.clip_id, 0.0
-                    )
+                clip_id = self._current_match.var_data.clip_id
+                if clip_id and self._hyperdeck.has_playable_clip(clip_id):
+                    await self._hyperdeck.warp_to_clip(clip_id, 0.0)
                 await self._websocket.notify(CONTROLLER_STATUS_EVENT)
 
     async def _handle_warp_to_time_command(self, command: WarpToTimeCommand):
@@ -513,12 +531,9 @@ class VARController:
             ):
                 # Race condition, ignore the command
                 return
-            if self._current_match.var_data.clip_id is None:
-                # No recording to warp
-                return
-            await self._hyperdeck.warp_to_clip(
-                self._current_match.var_data.clip_id, command.time
-            )
+            clip_id = self._current_match.var_data.clip_id
+            if clip_id and self._hyperdeck.has_playable_clip(clip_id):
+                await self._hyperdeck.warp_to_clip(clip_id, command.time)
 
     async def _handle_add_var_review_command(self, command: AddVARReviewCommand):
         """Handle a command to add a VAR review event to the current match."""

@@ -242,7 +242,7 @@ export interface MatchResultWithSummary extends MatchResult {
 
 export interface MatchWithResultAndSummary extends Match {
     /** Results of the match, including final scores */
-    result: MatchResultWithSummary;
+    result?: MatchResultWithSummary;
 }
 
 /* Hyperdeck status types */

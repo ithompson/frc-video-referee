@@ -111,9 +111,7 @@ class CheesyArenaClient:
         """Whether or not the client is currently connected to Cheesy Arena"""
 
         # Current arena state, accessible to subscribers
-        self.match_results: Dict[str, List[MatchWithResultAndSummary]] = {
-            match_type: [] for match_type in MATCH_TYPES
-        }
+        self.match_results: Dict[int, MatchWithResultAndSummary] = {}
         """Results for all matches, keyed by match type"""
         self.realtime_score = PLACEHOLDER_REALTIME_SCORE_MESSAGE
         """Current realtime scoring data"""
@@ -283,13 +281,15 @@ class CheesyArenaClient:
             match_data = MatchResultList.validate_json(response.text)
             return match_data
 
-        match_results = await asyncio.gather(
+        match_results_by_type = await asyncio.gather(
             *(fetch_matches_of_type(match_type) for match_type in MATCH_TYPES)
         )
 
-        self.match_results = {
-            match_type: result for match_type, result in zip(MATCH_TYPES, match_results)
-        }
+        match_results: Dict[int, MatchWithResultAndSummary] = {}
+        for matches_for_type in match_results_by_type:
+            match_results.update({match.id: match for match in matches_for_type})
+
+        self.match_results = match_results
         await self._notify(ArenaNotifier.HISTORICAL_SCORES_UPDATED)
 
     async def _notify(self, notifier: ArenaNotifier):
