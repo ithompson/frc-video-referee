@@ -1,6 +1,6 @@
 <script lang="ts">
     import { getEventTypeColor } from "../lib/events";
-    import type { MatchEvent } from "../lib/model";
+    import type { MatchEvent, MatchTiming } from "../lib/model";
 
     interface EventWithIdx {
         event_idx: number;
@@ -12,21 +12,22 @@
         warpToEvent?: (event: MatchEvent) => void;
         warpToTime?: (time: number) => void;
         currentTime: number;
+        match_timing: MatchTiming;
     }
 
-    let { events, warpToEvent, warpToTime, currentTime }: Props = $props();
+    let { events, warpToEvent, warpToTime, currentTime, match_timing }: Props =
+        $props();
 
+    const num_ticks = 100000;
     let fps = 59.94;
-    let auto_duration_sec = 15;
-    let pause_duration_sec = 3;
-    let teleop_duration_sec = 135;
     let scoring_capture_sec = 5;
 
-    let auto_start_time = 0;
-    let auto_end_time = auto_duration_sec;
-    let teleop_start_time = auto_end_time + pause_duration_sec;
-    let teleop_end_time = teleop_start_time + teleop_duration_sec;
-    let total_recording_duration = teleop_end_time + scoring_capture_sec;
+    const auto_start_time = match_timing.warmup_duration_sec;
+    const auto_end_time = auto_start_time + match_timing.auto_duration_sec;
+    const teleop_start_time = auto_end_time + match_timing.pause_duration_sec;
+    const teleop_end_time =
+        teleop_start_time + match_timing.teleop_duration_sec;
+    const total_recording_duration = teleop_end_time + scoring_capture_sec;
 
     let total_time = total_recording_duration * fps; // Total time in frames for the clip
 

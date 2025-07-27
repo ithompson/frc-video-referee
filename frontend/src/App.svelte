@@ -70,19 +70,18 @@
             red_score_summary: server_state.realtime_score.red.score_summary,
             blue_score_summary: server_state.realtime_score.blue.score_summary,
           };
-        } else if (current_match.arena_data) {
-          return {
-            red_score: current_match.arena_data.result.red_score,
-            blue_score: current_match.arena_data.result.blue_score,
-            red_score_summary: current_match.arena_data.result.red_summary,
-            blue_score_summary: current_match.arena_data.result.blue_summary,
-          };
         } else {
           return {
-            red_score: PLACEHOLDER_SCORE,
-            blue_score: PLACEHOLDER_SCORE,
-            red_score_summary: PLACEHOLDER_SCORE_SUMMARY,
-            blue_score_summary: PLACEHOLDER_SCORE_SUMMARY,
+            red_score:
+              current_match.arena_data?.result?.red_score ?? PLACEHOLDER_SCORE,
+            blue_score:
+              current_match.arena_data?.result?.blue_score ?? PLACEHOLDER_SCORE,
+            red_score_summary:
+              current_match.arena_data?.result?.red_summary ??
+              PLACEHOLDER_SCORE_SUMMARY,
+            blue_score_summary:
+              current_match.arena_data?.result?.blue_summary ??
+              PLACEHOLDER_SCORE_SUMMARY,
           };
         }
       })(),
@@ -178,6 +177,7 @@
           {warpToEvent}
           {warpToTime}
           currentTime={effective_time}
+          match_timing={server_state.match_timing}
         />
       </div>
     </div>
