@@ -334,7 +334,7 @@ async def get_all_clips():
 
 
 # WebSocket API
-@app.websocket("/control/api/v1/events/websocket")
+@app.websocket("/control/api/v1/event/websocket")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time property updates."""
     await websocket.accept()

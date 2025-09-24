@@ -30,22 +30,20 @@
         hyperdeck_status,
     }: Props = $props();
 
-    let recorder_icon = $derived(
-        (() => {
-            switch (hyperdeck_status.transport_mode) {
-                case HyperdeckTransportMode.InputPreview:
-                    return live_icon;
-                case HyperdeckTransportMode.InputRecord:
-                    return record_icon;
-                case HyperdeckTransportMode.Output:
-                    if (hyperdeck_status.playing) {
-                        return play_icon;
-                    } else {
-                        return pause_icon;
-                    }
-            }
-        })(),
-    );
+    let recorder_icon = $derived.by(() => {
+        switch (hyperdeck_status.transport_mode) {
+            case HyperdeckTransportMode.InputPreview:
+                return live_icon;
+            case HyperdeckTransportMode.InputRecord:
+                return record_icon;
+            case HyperdeckTransportMode.Output:
+                if (hyperdeck_status.playing) {
+                    return play_icon;
+                } else {
+                    return pause_icon;
+                }
+        }
+    });
 </script>
 
 {#snippet status(ok: boolean)}

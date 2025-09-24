@@ -2,10 +2,11 @@ import { mount } from 'svelte'
 import './app.css'
 import App from './App.svelte'
 import WebSocketClient from './lib/wsclient.svelte'
-import { HyperdeckTransportMode, WebsocketEventType, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type RealtimeScore, type UISettings, type VARMatchTable } from './lib/model'
+import { WebsocketEventType, type ControllerStatus, type HyperdeckStatus, type Match, type MatchTime, type RealtimeScore, type UISettings, type VARMatchTable } from './lib/model'
 import { server_state } from './lib/server_state.svelte'
 
-const websocketAddress = import.meta.env.DEV ? 'rho.local:8000' : window.location.host;
+const defaultDevWebsocketAddress = window.location.hostname + ':8000';
+const websocketAddress = import.meta.env.DEV ? (import.meta.env.VITE_VAR_SERVER || defaultDevWebsocketAddress) : window.location.host;
 
 const ws = new WebSocketClient(websocketAddress);
 ws.subscribe(WebsocketEventType.UISettings, (data) => {

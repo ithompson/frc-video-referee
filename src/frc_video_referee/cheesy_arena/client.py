@@ -42,8 +42,8 @@ class ArenaClientSettings(BaseModel, use_attribute_docstrings=True):
     """Cheesy Arena server address"""
     password: str | None = None
     """Password for arena APIs requiring authentication"""
-    compat_mode: bool = False
-    """Whether to use legacy arena APIs with no specific VAR support"""
+    has_var_enhancements: bool = False
+    """Whether Cheesy Arena has advanced VAR features enabled"""
 
 
 class UnexpectedStatusCode(Exception):
@@ -212,16 +212,16 @@ class CheesyArenaClient:
         else:
             additional_headers = {}
 
-        if self._settings.compat_mode:
-            # Baseline endpoint available in unmodified Cheesy Arena
-            websocket_endpoint = (
-                f"ws://{self._settings.address}/panels/referee/websocket"
-            )
-        else:
+        if self._settings.has_var_enhancements:
             # VAR-specific endpoint in the VAR branch of Cheesy Arena, adds additional
             # arena configuration and readiness reports
             websocket_endpoint = (
                 f"ws://{self._settings.address}/video_referee/websocket"
+            )
+        else:
+            # Baseline endpoint available in unmodified Cheesy Arena
+            websocket_endpoint = (
+                f"ws://{self._settings.address}/panels/referee/websocket"
             )
 
         async with websockets.connect(

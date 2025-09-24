@@ -8,20 +8,18 @@
     let { match, onclick }: Props = $props();
 
     let result = $derived(match.arena_data?.result);
-    let result_style_class = $derived(
-        (() => {
-            switch (match.arena_data?.status) {
-                case MatchStatus.RED_WON:
-                    return "alliance red";
-                case MatchStatus.BLUE_WON:
-                    return "alliance blue";
-                case MatchStatus.TIE:
-                    return "tie";
-                default:
-                    return "";
-            }
-        })(),
-    );
+    let result_style_class = $derived.by(() => {
+        switch (match.arena_data?.status) {
+            case MatchStatus.RED_WON:
+                return "alliance red";
+            case MatchStatus.BLUE_WON:
+                return "alliance blue";
+            case MatchStatus.TIE:
+                return "tie";
+            default:
+                return "";
+        }
+    });
 </script>
 
 <div

@@ -31,61 +31,57 @@
   );
   let realtime_data = $derived(server_state.controller_status.realtime_data);
 
-  let displayed_arena_match = $derived(
-    (() => {
-      if (realtime_data) {
-        return server_state.realtime_match;
+  let displayed_arena_match = $derived.by(() => {
+    if (realtime_data) {
+      return server_state.realtime_match;
+    } else {
+      if (current_match) {
+        return (
+          current_match.arena_data ?? {
+            id: current_match.var_data.arena_id,
+            match_type: MatchType.TEST,
+            type_order: 0,
+            long_name: current_match.var_data.var_id,
+            short_name: current_match.var_data.var_id,
+            red1: 0,
+            red2: 0,
+            red3: 0,
+            blue1: 0,
+            blue2: 0,
+            blue3: 0,
+            status: MatchStatus.SCHEDULED,
+          }
+        );
       } else {
-        if (current_match) {
-          return (
-            current_match.arena_data ?? {
-              id: current_match.var_data.arena_id,
-              match_type: MatchType.TEST,
-              type_order: 0,
-              long_name: current_match.var_data.var_id,
-              short_name: current_match.var_data.var_id,
-              red1: 0,
-              red2: 0,
-              red3: 0,
-              blue1: 0,
-              blue2: 0,
-              blue3: 0,
-              status: MatchStatus.SCHEDULED,
-            }
-          );
-        } else {
-          return PLACEHOLDER_MATCH;
-        }
+        return PLACEHOLDER_MATCH;
       }
-    })(),
-  );
+    }
+  });
 
   let { red_score, blue_score, red_score_summary, blue_score_summary } =
-    $derived(
-      (() => {
-        if (realtime_data) {
-          return {
-            red_score: server_state.realtime_score.red.score,
-            blue_score: server_state.realtime_score.blue.score,
-            red_score_summary: server_state.realtime_score.red.score_summary,
-            blue_score_summary: server_state.realtime_score.blue.score_summary,
-          };
-        } else {
-          return {
-            red_score:
-              current_match.arena_data?.result?.red_score ?? PLACEHOLDER_SCORE,
-            blue_score:
-              current_match.arena_data?.result?.blue_score ?? PLACEHOLDER_SCORE,
-            red_score_summary:
-              current_match.arena_data?.result?.red_summary ??
-              PLACEHOLDER_SCORE_SUMMARY,
-            blue_score_summary:
-              current_match.arena_data?.result?.blue_summary ??
-              PLACEHOLDER_SCORE_SUMMARY,
-          };
-        }
-      })(),
-    );
+    $derived.by(() => {
+      if (realtime_data) {
+        return {
+          red_score: server_state.realtime_score.red.score,
+          blue_score: server_state.realtime_score.blue.score,
+          red_score_summary: server_state.realtime_score.red.score_summary,
+          blue_score_summary: server_state.realtime_score.blue.score_summary,
+        };
+      } else {
+        return {
+          red_score:
+            current_match.arena_data?.result?.red_score ?? PLACEHOLDER_SCORE,
+          blue_score:
+            current_match.arena_data?.result?.blue_score ?? PLACEHOLDER_SCORE,
+          red_score_summary:
+            current_match.arena_data?.result?.red_summary ??
+            PLACEHOLDER_SCORE_SUMMARY,
+          blue_score_summary:
+            current_match.arena_data?.result?.blue_summary ??
+            PLACEHOLDER_SCORE_SUMMARY,
+        };
+      }
+    });
 
   let sorted_matches = $derived(
     Object.values(server_state.matches).sort((a, b) =>
