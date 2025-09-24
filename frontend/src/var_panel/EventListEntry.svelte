@@ -10,14 +10,19 @@
         onclick?: (event: MatchEvent) => void;
     }
     let { event_idx, event, match_timing, onclick }: Props = $props();
+
+    let event_alliance = $derived.by(() => {
+        if (event.team_id?.startsWith("R")) {
+            return "red";
+        } else if (event.team_id?.startsWith("B")) {
+            return "blue";
+        } else {
+            return null;
+        }
+    });
 </script>
 
-<div
-    class="event-card"
-    role="button"
-    tabindex="0"
-    onclick={() => onclick?.(event)}
->
+<button class="event-card" tabindex="0" onclick={() => onclick?.(event)}>
     <div class="card-header">
         <span class="event-idx">{event_idx}</span>
         <span
@@ -34,9 +39,13 @@
         {#if event.reason}
             <div class="event-section">{event.reason}</div>
         {/if}
-        <!-- <div class="event-section alliance red">Team 123</div> -->
+        {#if event.team_id}
+            <div class="event-section alliance {event_alliance}">
+                Team {event.team_id}
+            </div>
+        {/if}
     </div>
-</div>
+</button>
 
 <style>
     .event-card {
@@ -71,6 +80,7 @@
     }
 
     .event-details {
+        color: var(--text-active);
         display: flex;
         flex-direction: column;
         gap: 5px;

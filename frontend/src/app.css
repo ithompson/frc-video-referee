@@ -19,16 +19,22 @@
   text-align: center;
 }
 
-input, button,
-textarea, select {
+input,
+button,
+textarea,
+select {
   font-family: inherit;
   font-size: inherit;
 }
 
 button {
+  -webkit-appearance: none;
+  appearance: none;
+  align-items: normal;
   border: none;
   padding: 0;
 }
+
 button:hover:enabled {
   cursor: auto;
 }

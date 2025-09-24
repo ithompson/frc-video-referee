@@ -13,7 +13,7 @@
     ];
 </script>
 
-<svg viewbox="0 0 120 600" class:mirror>
+<svg viewBox="0 0 120 600" class:mirror>
     <g stroke="var(--reef-pole)" stroke-width="12px" fill="none">
         <path
             d="m 60,0 v 125 a 24.142136,24.142136 112.5 0 1 -7.071068,17.07107 L 12.071068,182.92893 A 24.142136,24.142136 112.5 0 0 5,200 v 400"

@@ -22,12 +22,7 @@
     });
 </script>
 
-<div
-    class="match-card"
-    role="button"
-    tabindex="0"
-    onclick={() => onclick?.(match)}
->
+<button class="match-card" tabindex="0" onclick={() => onclick?.(match)}>
     <div class="card-header">{match.var_data.var_id}</div>
     <div class="match-details">
         {#if match.arena_data}
@@ -55,10 +50,11 @@
             <div class="match-section">No video clip</div>
         {/if}
     </div>
-</div>
+</button>
 
 <style>
     .match-card {
+        color: var(--text-active);
         box-sizing: border-box;
         border: 4px solid var(--gray-600);
         border-radius: 10px;
@@ -72,7 +68,6 @@
     }
     .card-header {
         background-color: var(--gray-600);
-        color: var(--text-active);
         font-weight: bold;
         padding: 2px 0.5em 4px 0.5em;
         box-shadow: 0 0px 8px black;
