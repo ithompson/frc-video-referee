@@ -25,6 +25,11 @@ work_dir = "frontend"
 commands = ["bun install", "bun run build --outDir py_dist"]
 artifacts = ["py_dist/*"]
 
+[dependency-groups]
+dev = [
+    "ruff>=0.13.1",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/frc_video_referee"]
 force-include = { "frontend/py_dist" = "frc_video_referee/web/static" }
