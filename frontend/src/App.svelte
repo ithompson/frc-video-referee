@@ -60,6 +60,10 @@
     }
   });
 
+  let displayed_match_teams = $derived(
+    current_match?.var_data.teams ?? { red: [0, 0, 0], blue: [0, 0, 0] },
+  );
+
   let { red_score, blue_score, red_score_summary, blue_score_summary } =
     $derived.by(() => {
       if (realtime_data) {
@@ -180,7 +184,7 @@
           {blue_score}
           {red_score_summary}
           {blue_score_summary}
-          match={displayed_arena_match}
+          teams={displayed_match_teams}
           swap={server_state.ui_settings.swap_red_blue}
         />
       </div>
@@ -218,6 +222,7 @@
           <EventListEntry
             event_idx={data.event_idx}
             event={data.event}
+            match={current_match}
             match_timing={server_state.match_timing}
             onclick={warpToEvent}
           />

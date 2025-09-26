@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
-from typing import List
-from pydantic import BaseModel
+from typing import Annotated, Dict, List
+from pydantic import BaseModel, Field
 
 
 class ArenaClientState(BaseModel):
@@ -24,6 +24,10 @@ class MatchEventType(Enum):
     """A moment requested for review by the Head Referee"""
     ROBOT_DISCONNECT = "robot_disconnect"
     """A robot disconnecting during the match"""
+    MINOR_FOUL = "minor_foul"
+    """A minor foul during the match"""
+    MAJOR_FOUL = "major_foul"
+    """A major foul during the match"""
 
 
 class EventCoordinates(BaseModel):
@@ -35,6 +39,17 @@ class EventCoordinates(BaseModel):
     """Y coordinate in the range 0..1"""
 
 
+class Alliance(Enum):
+    """An alliance in a match"""
+
+    RED = "red"
+    BLUE = "blue"
+
+
+AllianceTeamList = Annotated[List[int], Field(min_length=3, max_length=3)]
+"""List of exactly 3 team numbers for an alliance"""
+
+
 class MatchEvent(BaseModel):
     """Record of a review-worthy event during a match"""
 
@@ -44,14 +59,16 @@ class MatchEvent(BaseModel):
     """Type of the event"""
     time: float
     """Time in seconds from the start of the match when the event occurred"""
-    team: int | None = None
-    """Team ID associated with the event, if applicable"""
-    alliance: str | None = None
-    """Alliance associated with the event, if applicable ('red' or 'blue')"""
+    alliance: Alliance | None = None
+    """Alliance associated with the event, if applicable"""
+    team_idx: Annotated[int | None, Field(ge=0, le=2)] = None
+    """Team index (0, 1, or 2) within the alliance associated with the event, if applicable"""
     reason: str | None = None
     """Optional brief description of the event, e.g. 'Damaging contact' or 'Multiple fouls'"""
     coordinates: EventCoordinates | None = None
     """Optional coordinates for the event on the field, if applicable"""
+    arena_foul_id: int | None = None
+    """Identifier for a foul occurrence in Cheesy Arena, if applicable"""
 
 
 class RecordedMatch(BaseModel):
@@ -67,5 +84,9 @@ class RecordedMatch(BaseModel):
     """Our chosen filename for the clip on the HyperDeck"""
     timestamp: datetime
     """Timestamp of the start of the match"""
+    teams: Annotated[
+        Dict[Alliance, AllianceTeamList], Field(min_length=2, max_length=2)
+    ]
+    """Team numbers in the match, by alliance"""
     events: List[MatchEvent] = []
     """List of events during the match that the user can warp to"""

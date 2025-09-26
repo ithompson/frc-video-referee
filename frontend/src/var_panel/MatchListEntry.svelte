@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { MatchStatus, type VARMatch } from "../lib/model";
+    import { Alliance, MatchStatus, type VARMatch } from "../lib/model";
 
     interface Props {
         match: VARMatch;
@@ -31,24 +31,24 @@
                     {result.red_summary.score} - {result.blue_summary.score}
                 </div>
             {/if}
-            <div class="match-section team-lists">
-                <ol class="red">
-                    <li>{match.arena_data.red1}</li>
-                    <li>{match.arena_data.red2}</li>
-                    <li>{match.arena_data.red3}</li>
-                </ol>
-                <ol class="blue">
-                    <li>{match.arena_data.blue3}</li>
-                    <li>{match.arena_data.blue2}</li>
-                    <li>{match.arena_data.blue1}</li>
-                </ol>
-            </div>
         {:else}
             <div class="match-section">No arena data</div>
         {/if}
         {#if !match.clip_available}
             <div class="match-section">No video clip</div>
         {/if}
+        <div class="match-section team-lists">
+            <ol class="red">
+                <li>{match.var_data.teams[Alliance.RED][0]}</li>
+                <li>{match.var_data.teams[Alliance.RED][1]}</li>
+                <li>{match.var_data.teams[Alliance.RED][2]}</li>
+            </ol>
+            <ol class="blue">
+                <li>{match.var_data.teams[Alliance.BLUE][2]}</li>
+                <li>{match.var_data.teams[Alliance.BLUE][1]}</li>
+                <li>{match.var_data.teams[Alliance.BLUE][0]}</li>
+            </ol>
+        </div>
     </div>
 </button>
 

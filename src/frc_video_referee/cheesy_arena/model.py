@@ -144,6 +144,8 @@ class Foul(BaseArenaModel):
     """The team that committed the foul"""
     rule_id: Annotated[int, Field(alias="RuleId")]
     """The rule that was violated"""
+    foul_id: Annotated[int | None, Field(alias="FoulId")] = None
+    """A unique identifier for the occurrence of a foul"""
 
 
 class EndgameStatus(IntEnum):
