@@ -35,6 +35,12 @@ class UISettings(BaseModel):
     swap_red_blue: bool = False
     """Swap the position of the red and blue score panels. The default matches the view from the scoring table"""
 
+    reef_level_rp_threshold: int = 5
+    """Per-level threshold on reef for achieving the coral RP"""
+
+    barge_rp_threshold: int = 14
+    """Threshold of barge points to achieve the RP"""
+
 
 class WebsocketManager:
     class Notifier(NamedTuple):

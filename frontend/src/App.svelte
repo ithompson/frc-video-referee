@@ -165,6 +165,9 @@
           {blue_score_summary}
           teams={displayed_match_teams}
           swap={server_state.ui_settings.swap_red_blue}
+          reef_level_rp_threshold={server_state.ui_settings
+            .reef_level_rp_threshold}
+          barge_rp_threshold={server_state.ui_settings.barge_rp_threshold}
         />
       </div>
       <div class="flex-spacer" style="flex: 1 1 0%"></div>
