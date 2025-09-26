@@ -17,6 +17,7 @@
     type MatchEvent,
     type VARMatch,
   } from "./lib/model";
+    import { REASONS } from "./lib/reasons";
 
   interface Props {
     ws: WebSocketClient;
@@ -165,7 +166,11 @@
       </div>
       <div class="flex-spacer" style="flex: 1 1 0%"></div>
       <div class="event-info-container">
-        <EventCard />
+        <EventCard 
+          reasons={REASONS}
+          redTeams={[displayed_arena_match.red1, displayed_arena_match.red2, displayed_arena_match.red3]}
+          blueTeams={[displayed_arena_match.blue1, displayed_arena_match.blue2, displayed_arena_match.blue3]}
+        />
       </div>
       <div class="timeline-container">
         <Timeline

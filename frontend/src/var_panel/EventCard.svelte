@@ -1,6 +1,14 @@
-<script>
+<script lang="ts">
     import FieldMap from "./FieldMap.svelte";
     let editing = $state(false);
+
+    interface Props {
+        reasons: string[];
+        redTeams: number[];
+        blueTeams: number[];
+        selectedTeam?: number;
+    }
+    let { reasons, redTeams, blueTeams, selectedTeam }: Props = $props();
 </script>
 
 <div class="event-card" class:editing>
@@ -18,20 +26,41 @@
         <div class="event-sections">
             <div class="event-section">
                 <div class="section-name">Reason</div>
-                <div class="section-content event-reason">Damaging Contact</div>
+                <div class="section-content event-reason">
+                    <select>
+                        {#each reasons as reason}
+                            <option>{reason}</option>
+                        {/each}
+                    </select>
+                </div>
             </div>
             <div class="event-section">
                 <div class="section-name">Team</div>
                 <div class="section-content team-lists">
                     <ol class="team-list blue">
-                        <li>142</li>
-                        <li>31332</li>
-                        <li>19382</li>
+                        {#each blueTeams as team}
+                            <li class:selected={selectedTeam === team}>
+                                <button
+                                    onclick={() => (selectedTeam = team)}
+                                    style="all: unset; cursor: pointer;"
+                                >
+                                    {team}
+                                </button>
+                            </li>
+                        {/each}
                     </ol>
+
                     <ol class="team-list red">
-                        <li>11932</li>
-                        <li class="selected">2623</li>
-                        <li>272</li>
+                        {#each redTeams as team}
+                            <li class:selected={selectedTeam === team}>
+                                <button
+                                    onclick={() => (selectedTeam = team)}
+                                    style="all: unset; cursor: pointer;"
+                                >
+                                    {team}
+                                </button>
+                            </li>
+                        {/each}
                     </ol>
                 </div>
             </div>
