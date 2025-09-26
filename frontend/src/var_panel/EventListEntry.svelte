@@ -10,8 +10,6 @@
         onclick?: (event: MatchEvent) => void;
     }
     let { event_idx, event, match_timing, onclick }: Props = $props();
-
-    let event_alliance = event.alliance ? event.alliance : null;
 </script>
 
 <button class="event-card" tabindex="0" onclick={() => onclick?.(event)}>
@@ -32,9 +30,15 @@
             <div class="event-section">{event.reason}</div>
         {/if}
         {#if event.team}
-            <div class="event-section alliance {event_alliance}">
-                Team {event.team}
-            </div>
+            {#if event.alliance}
+                <div class="event-section alliance {event.alliance}">
+                    Team {event.team}
+                </div>
+            {:else}
+                <div class="event-section">
+                    Team {event.team}
+                </div>
+            {/if}
         {/if}
     </div>
 </button>

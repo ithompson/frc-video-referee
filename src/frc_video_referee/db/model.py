@@ -44,8 +44,10 @@ class MatchEvent(BaseModel):
     """Type of the event"""
     time: float
     """Time in seconds from the start of the match when the event occurred"""
-    team_id: str | None = None
+    team: int | None = None
     """Team ID associated with the event, if applicable"""
+    alliance: str | None = None
+    """Alliance associated with the event, if applicable ('red' or 'blue')"""
     reason: str | None = None
     """Optional brief description of the event, e.g. 'Damaging contact' or 'Multiple fouls'"""
     coordinates: EventCoordinates | None = None

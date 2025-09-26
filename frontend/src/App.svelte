@@ -123,8 +123,6 @@
       selectedEventIdx = sorted_events_with_idx.find(
         (e) => e.event.event_id === event.event_id,
       )?.event_idx;
-
-      console.log(sorted_events_with_idx);
     }
   }
   function warpToTime(time: number) {
@@ -151,7 +149,6 @@
     if (current_match && selectedEventIdx !== undefined) {
       const eventToUpdate = sorted_events_with_idx.find(e => e.event_idx === selectedEventIdx)?.event;
       if (eventToUpdate) {
-        console.log("Updating event", eventToUpdate, "with", eventUpdates);
         // Send update command to the server
         ws.sendCommand("update_event", {
           match_id: current_match.var_data.var_id,
