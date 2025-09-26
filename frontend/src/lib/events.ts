@@ -12,6 +12,10 @@ export function getEventTypeString(eventType: MatchEventType): string {
             return "HR Review";
         case MatchEventType.ROBOT_DISCONNECT:
             return "Robot Drop";
+        case MatchEventType.MINOR_FOUL:
+            return "Minor Foul";
+        case MatchEventType.MAJOR_FOUL:
+            return "Major Foul";
         default:
             return "Unknown";
     }
@@ -29,6 +33,10 @@ export function getEventTypeColor(eventType: MatchEventType): string {
             return "var(--auto-inactive)";
         case MatchEventType.ROBOT_DISCONNECT:
             return "var(--red-200)";
+        case MatchEventType.MINOR_FOUL:
+            return "var(--auto-inactive)";
+        case MatchEventType.MAJOR_FOUL:
+            return "var(--auto-inactive)";
         default:
             return "var(--red-200)";
     }

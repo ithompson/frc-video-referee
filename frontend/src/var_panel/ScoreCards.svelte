@@ -1,5 +1,10 @@
 <script lang="ts">
-    import { type Match, type Score, type ScoreSummary } from "../lib/model";
+    import {
+        Alliance,
+        type Score,
+        type ScoreSummary,
+        type TeamTable,
+    } from "../lib/model";
     import AllianceScoreCard from "./AllianceScoreCard.svelte";
 
     interface Props {
@@ -8,7 +13,7 @@
         blue_score: Score;
         red_score_summary: ScoreSummary;
         blue_score_summary: ScoreSummary;
-        match: Match;
+        teams: TeamTable;
         swap: boolean;
     }
     let {
@@ -17,7 +22,7 @@
         blue_score,
         red_score_summary,
         blue_score_summary,
-        match,
+        teams,
         swap,
     }: Props = $props();
 
@@ -30,7 +35,11 @@
         is_blue={true}
         score={blue_score}
         score_summary={blue_score_summary}
-        teams={[match.blue1, match.blue2, match.blue3]}
+        teams={[
+            teams[Alliance.BLUE][0],
+            teams[Alliance.BLUE][1],
+            teams[Alliance.BLUE][2],
+        ]}
         hide_final_score={hide_scores && hide_final_score}
         hide_rp={hide_scores && hide_rp}
         toggle_final_score={() => (hide_final_score = !hide_final_score)}
@@ -41,7 +50,11 @@
         is_blue={false}
         score={red_score}
         score_summary={red_score_summary}
-        teams={[match.red1, match.red2, match.red3]}
+        teams={[
+            teams[Alliance.RED][0],
+            teams[Alliance.RED][1],
+            teams[Alliance.RED][2],
+        ]}
         hide_final_score={hide_scores && hide_final_score}
         hide_rp={hide_scores && hide_rp}
         toggle_final_score={() => (hide_final_score = !hide_final_score)}

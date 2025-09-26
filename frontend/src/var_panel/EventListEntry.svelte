@@ -1,25 +1,16 @@
 <script lang="ts">
     import { getEventTypeColor, getEventTypeString } from "../lib/events";
     import { formatMatchTime } from "../lib/match_time";
-    import type { MatchEvent, MatchTiming } from "../lib/model";
+    import type { MatchEvent, MatchTiming, VARMatch } from "../lib/model";
 
     interface Props {
         event_idx: number;
         event: MatchEvent;
+        match: VARMatch;
         match_timing: MatchTiming;
         onclick?: (event: MatchEvent) => void;
     }
-    let { event_idx, event, match_timing, onclick }: Props = $props();
-
-    let event_alliance = $derived.by(() => {
-        if (event.team_id?.startsWith("R")) {
-            return "red";
-        } else if (event.team_id?.startsWith("B")) {
-            return "blue";
-        } else {
-            return null;
-        }
-    });
+    let { event_idx, event, match, match_timing, onclick }: Props = $props();
 </script>
 
 <button class="event-card" tabindex="0" onclick={() => onclick?.(event)}>
@@ -39,9 +30,15 @@
         {#if event.reason}
             <div class="event-section">{event.reason}</div>
         {/if}
-        {#if event.team_id}
-            <div class="event-section alliance {event_alliance}">
-                Team {event.team_id}
+        {#if event.alliance}
+            <div class="event-section alliance {event.alliance}">
+                {#if event.team_idx}
+                    Team {match.var_data.teams[event.alliance][event.team_idx]}
+                {:else}
+                    <span style="text-transform: capitalize"
+                        >{event.alliance}</span
+                    > Alliance
+                {/if}
             </div>
         {/if}
     </div>

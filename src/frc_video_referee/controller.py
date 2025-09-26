@@ -2,11 +2,18 @@ import asyncio
 import enum
 import logging
 from datetime import datetime
+from typing import List
 import uuid
 
 from pydantic import BaseModel
 from frc_video_referee import db
-from frc_video_referee.db.model import MatchEvent, MatchEventType, RecordedMatch
+from frc_video_referee.cheesy_arena.model import Foul
+from frc_video_referee.db.model import (
+    Alliance,
+    MatchEvent,
+    MatchEventType,
+    RecordedMatch,
+)
 from frc_video_referee.hyperdeck.client import HyperdeckClient, HyperdeckNotifier
 from frc_video_referee.cheesy_arena.client import ArenaNotifier, CheesyArenaClient
 from frc_video_referee.hyperdeck.model import PlaybackType
@@ -311,6 +318,84 @@ class VARController:
                 var_match.var_data.arena_id
             )
 
+    async def _check_for_foul_changes(self):
+        """Check if any fouls have been added or changed in the realtime score."""
+        async with self._lock:
+            if self._state != ControllerState.Recording or self._current_match is None:
+                return
+
+            current_fouls = {
+                event.arena_foul_id: event
+                for event in self._current_match.var_data.events
+                if event.arena_foul_id is not None
+            }
+
+            def find_team_idx(team_id: int, alliance: Alliance) -> int | None:
+                if self._current_match is None or team_id == 0:
+                    return None
+                teams = self._current_match.var_data.teams[alliance]
+                try:
+                    return teams.index(team_id)
+                except ValueError:
+                    return None
+
+            red_fouls = self._arena.realtime_score.red.score.fouls or []
+            blue_fouls = self._arena.realtime_score.blue.score.fouls or []
+
+            made_change = False
+
+            def process_foul_list(foul_list: List[Foul], alliance: Alliance):
+                nonlocal current_fouls
+                nonlocal made_change
+
+                for foul in foul_list:
+                    if foul.foul_id is None:
+                        # Compatibility check for CA versions that don't have FoulId
+                        continue
+                    if foul.foul_id not in current_fouls:
+                        event_type = (
+                            MatchEventType.MAJOR_FOUL
+                            if foul.is_major
+                            else MatchEventType.MINOR_FOUL
+                        )
+                        team_idx = find_team_idx(foul.team_id, alliance)
+                        event = MatchEvent(
+                            event_id=self._create_event_id(),
+                            event_type=event_type,
+                            time=self._get_current_match_time(),
+                            alliance=alliance,
+                            team_idx=team_idx,
+                            arena_foul_id=foul.foul_id,
+                        )
+                        self._add_match_event(event)
+                        made_change = True
+                    else:
+                        # Check if any changes have occurred to this foul
+                        existing_foul = current_fouls[foul.foul_id]
+
+                        # Foul type changes
+                        expected_event_type = (
+                            MatchEventType.MAJOR_FOUL
+                            if foul.is_major
+                            else MatchEventType.MINOR_FOUL
+                        )
+                        if existing_foul.event_type != expected_event_type:
+                            existing_foul.event_type = expected_event_type
+                            made_change = True
+
+                        # Team changes
+                        expected_team_idx = find_team_idx(foul.team_id, alliance)
+                        if existing_foul.team_idx != expected_team_idx:
+                            existing_foul.team_idx = expected_team_idx
+                            made_change = True
+
+            process_foul_list(red_fouls, Alliance.RED)
+            process_foul_list(blue_fouls, Alliance.BLUE)
+
+            if made_change:
+                self._db.save_match(self._current_match.var_data)
+                await self._websocket.notify(MATCH_LIST_EVENT)
+
     #######################################
     # Handlers for match lifecycle events #
     #######################################
@@ -336,12 +421,26 @@ class VARController:
                 f"Started recording of match {match_id} at {match_timestamp.isoformat()}"
             )
 
+            match_teams = {
+                Alliance.RED: [
+                    self._arena.match_data.match_info.red1,
+                    self._arena.match_data.match_info.red2,
+                    self._arena.match_data.match_info.red3,
+                ],
+                Alliance.BLUE: [
+                    self._arena.match_data.match_info.blue1,
+                    self._arena.match_data.match_info.blue2,
+                    self._arena.match_data.match_info.blue3,
+                ],
+            }
+
             self._current_match = MatchListEntry(
                 var_data=RecordedMatch(
                     var_id=match_id,
                     arena_id=self._arena.match_data.match_info.id,
                     clip_file_name=recording_name,
                     timestamp=match_timestamp,
+                    teams=match_teams,
                 ),
                 arena_data=self._arena.match_results.get(
                     self._arena.match_data.match_info.id
@@ -463,6 +562,7 @@ class VARController:
 
     async def _handle_realtime_score_update(self):
         """Handle a notification that the realtime score has changed"""
+        await self._check_for_foul_changes()
         await self._websocket.notify(REALTIME_SCORE_EVENT)
 
     async def _handle_match_data_update(self):

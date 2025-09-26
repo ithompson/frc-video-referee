@@ -259,7 +259,14 @@ export enum MatchEventType {
     ENDGAME_SCORING = "endgame_scoring",
     VAR_REVIEW = "var_review",
     HR_REVIEW = "hr_review",
-    ROBOT_DISCONNECT = "robot_disconnect"
+    ROBOT_DISCONNECT = "robot_disconnect",
+    MINOR_FOUL = "minor_foul",
+    MAJOR_FOUL = "major_foul",
+}
+
+export enum Alliance {
+    RED = "red",
+    BLUE = "blue",
 }
 
 export interface EventCoordinates {
@@ -271,9 +278,15 @@ export interface MatchEvent {
     event_id: string;
     event_type: MatchEventType;
     time: number;
-    team_id?: string;
+    alliance?: Alliance;
+    team_idx?: number; // 0, 1, or 2 for the position on the alliance
     reason?: string;
     coordinates?: EventCoordinates;
+    arena_foul_id?: number;
+}
+
+export interface TeamTable {
+    [index: string]: [number, number, number]; // team numbers for the alliance
 }
 
 export interface RecordedMatch {
@@ -282,6 +295,7 @@ export interface RecordedMatch {
     clip_id?: number;
     clip_file_name: string;
     timestamp: string;
+    teams: TeamTable;
     events: MatchEvent[];
 }
 
