@@ -21,9 +21,10 @@
 
   interface Props {
     ws: WebSocketClient;
+    selectedEventIdx?: number;
   }
 
-  let { ws }: Props = $props();
+  let { ws, selectedEventIdx }: Props = $props();
 
   let current_match = $derived(
     server_state.matches[
@@ -117,6 +118,13 @@
         match_id: current_match.var_data.var_id,
         time: event.time,
       });
+
+      // TODO: This is kinda hot garbage, but it works for now
+      selectedEventIdx = sorted_events_with_idx.find(
+        (e) => e.event.event_id === event.event_id,
+      )?.event_idx;
+
+      console.log(sorted_events_with_idx);
     }
   }
   function warpToTime(time: number) {
@@ -137,6 +145,21 @@
   }
   function exitReview() {
     ws.sendCommand("exit_review", {});
+  }
+
+  function updateEvent(eventUpdates: Partial<MatchEvent>) {
+    if (current_match && selectedEventIdx !== undefined) {
+      const eventToUpdate = sorted_events_with_idx.find(e => e.event_idx === selectedEventIdx)?.event;
+      if (eventToUpdate) {
+        console.log("Updating event", eventToUpdate, "with", eventUpdates);
+        // Send update command to the server
+        ws.sendCommand("update_event", {
+          match_id: current_match.var_data.var_id,
+          event_id: eventToUpdate.event_id,
+          updates: eventUpdates
+        });
+      }
+    }
   }
 </script>
 
@@ -166,11 +189,17 @@
       </div>
       <div class="flex-spacer" style="flex: 1 1 0%"></div>
       <div class="event-info-container">
-        <EventCard 
-          reasons={REASONS}
-          redTeams={[displayed_arena_match.red1, displayed_arena_match.red2, displayed_arena_match.red3]}
-          blueTeams={[displayed_arena_match.blue1, displayed_arena_match.blue2, displayed_arena_match.blue3]}
-        />
+        {#if selectedEventIdx !== undefined}
+          <EventCard 
+            reasons={REASONS}
+            redTeams={[displayed_arena_match.red1, displayed_arena_match.red2, displayed_arena_match.red3]}
+            blueTeams={[displayed_arena_match.blue1, displayed_arena_match.blue2, displayed_arena_match.blue3]}
+            eventIdx={selectedEventIdx}
+            event={sorted_events_with_idx.find(e => e.event_idx === selectedEventIdx)?.event}
+            match_timing={server_state.match_timing}
+            onUpdateEvent={updateEvent}
+          />
+        {/if}
       </div>
       <div class="timeline-container">
         <Timeline

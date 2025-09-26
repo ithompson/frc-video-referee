@@ -271,7 +271,8 @@ export interface MatchEvent {
     event_id: string;
     event_type: MatchEventType;
     time: number;
-    team_id?: string;
+    team?: number;
+    alliance?: 'red' | 'blue';
     reason?: string;
     coordinates?: EventCoordinates;
 }

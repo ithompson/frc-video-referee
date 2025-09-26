@@ -1,14 +1,22 @@
 <script lang="ts">
+    import { getEventTypeString } from "../lib/events";
+    import { formatMatchTime } from "../lib/match_time";
+    import type { MatchEvent, MatchTiming } from "../lib/model";
     import FieldMap from "./FieldMap.svelte";
     let editing = $state(false);
+    // import { $inspect } from 'svelte/compiler';
 
     interface Props {
         reasons: string[];
         redTeams: number[];
         blueTeams: number[];
         selectedTeam?: number;
+        eventIdx?: number;
+        event?: MatchEvent;
+        match_timing?: MatchTiming;
+        onUpdateEvent?: (updates: Partial<MatchEvent>) => void;
     }
-    let { reasons, redTeams, blueTeams, selectedTeam }: Props = $props();
+    let { reasons, redTeams, blueTeams, selectedTeam, eventIdx, event, match_timing, onUpdateEvent }: Props = $props();
 </script>
 
 <div class="event-card" class:editing>
@@ -19,19 +27,23 @@
     <FieldMap />
     <div class="event-data-container">
         <div class="event-header">
-            <div class="event-idx">2</div>
-            <div class="event-type">VAR Review</div>
-            <div class="event-time">Teleop 1:23</div>
+            <div class="event-idx">{eventIdx}</div>
+            <div class="event-type">{event?.event_type ? getEventTypeString(event.event_type) : ''}</div>
+            <div class="event-time">{event && match_timing ? formatMatchTime(event.time, match_timing) : ''}</div>
         </div>
         <div class="event-sections">
             <div class="event-section">
                 <div class="section-name">Reason</div>
                 <div class="section-content event-reason">
-                    <select>
-                        {#each reasons as reason}
-                            <option>{reason}</option>
-                        {/each}
-                    </select>
+                    {#if editing && event}
+                        <select value={event.reason} onchange={(e) => onUpdateEvent?.({ reason: e.currentTarget.value })}>
+                            {#each reasons as reason}
+                                <option value={reason}>{reason}</option>
+                            {/each}
+                        </select>
+                    {:else}
+                        {event?.reason || ''}
+                    {/if}
                 </div>
             </div>
             <div class="event-section">
@@ -39,9 +51,9 @@
                 <div class="section-content team-lists">
                     <ol class="team-list blue">
                         {#each blueTeams as team}
-                            <li class:selected={selectedTeam === team}>
+                            <li class:selected={event?.team === team}>
                                 <button
-                                    onclick={() => (selectedTeam = team)}
+                                    onclick={editing ? () => onUpdateEvent?.({ team, alliance: "blue" }) : undefined}
                                     style="all: unset; cursor: pointer;"
                                 >
                                     {team}
@@ -52,9 +64,9 @@
 
                     <ol class="team-list red">
                         {#each redTeams as team}
-                            <li class:selected={selectedTeam === team}>
+                            <li class:selected={event?.team === team}>
                                 <button
-                                    onclick={() => (selectedTeam = team)}
+                                    onclick={editing ? () => onUpdateEvent?.({ team, alliance: "red" }) : undefined}
                                     style="all: unset; cursor: pointer;"
                                 >
                                     {team}

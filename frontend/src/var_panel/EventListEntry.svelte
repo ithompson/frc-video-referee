@@ -11,15 +11,7 @@
     }
     let { event_idx, event, match_timing, onclick }: Props = $props();
 
-    let event_alliance = $derived.by(() => {
-        if (event.team_id?.startsWith("R")) {
-            return "red";
-        } else if (event.team_id?.startsWith("B")) {
-            return "blue";
-        } else {
-            return null;
-        }
-    });
+    let event_alliance = event.alliance ? event.alliance : null;
 </script>
 
 <button class="event-card" tabindex="0" onclick={() => onclick?.(event)}>
@@ -39,9 +31,9 @@
         {#if event.reason}
             <div class="event-section">{event.reason}</div>
         {/if}
-        {#if event.team_id}
+        {#if event.team}
             <div class="event-section alliance {event_alliance}">
-                Team {event.team_id}
+                Team {event.team}
             </div>
         {/if}
     </div>
