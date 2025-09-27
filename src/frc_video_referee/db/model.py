@@ -82,8 +82,10 @@ class RecordedMatch(BaseModel):
     """Hyperdeck-assigned identifier for the recorded video clip"""
     clip_file_name: str
     """Our chosen filename for the clip on the HyperDeck"""
-    timestamp: datetime
+    match_start_timestamp: datetime
     """Timestamp of the start of the match"""
+    recording_start_timestamp: datetime
+    """Timestamp of the hyperdeck starting its recording"""
     teams: Annotated[
         Dict[Alliance, AllianceTeamList], Field(min_length=2, max_length=2)
     ]

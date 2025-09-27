@@ -298,7 +298,8 @@ export interface RecordedMatch {
     arena_id: number;
     clip_id?: number;
     clip_file_name: string;
-    timestamp: string;
+    match_start_timestamp: string;
+    recording_start_timestamp: string;
     teams: TeamTable;
     events: MatchEvent[];
 }

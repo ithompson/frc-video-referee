@@ -89,9 +89,9 @@
 
   let sorted_matches = $derived(
     Object.values(server_state.matches).sort((a, b) =>
-      a.var_data.timestamp < b.var_data.timestamp
+      a.var_data.match_start_timestamp < b.var_data.match_start_timestamp
         ? 1
-        : b.var_data.timestamp < a.var_data.timestamp
+        : b.var_data.match_start_timestamp < a.var_data.match_start_timestamp
           ? -1
           : 0,
     ),
