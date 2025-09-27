@@ -2,9 +2,13 @@
 
 export interface UISettings {
     swap_red_blue: boolean;
+    reef_level_rp_threshold: number;
+    barge_rp_threshold: number;
 }
 export const DEFAULT_UI_SETTINGS: UISettings = {
     swap_red_blue: false,
+    reef_level_rp_threshold: 5,
+    barge_rp_threshold: 14,
 }
 
 /* Game-specific score model */
@@ -294,7 +298,8 @@ export interface RecordedMatch {
     arena_id: number;
     clip_id?: number;
     clip_file_name: string;
-    timestamp: string;
+    match_start_timestamp: string;
+    recording_start_timestamp: string;
     teams: TeamTable;
     events: MatchEvent[];
 }

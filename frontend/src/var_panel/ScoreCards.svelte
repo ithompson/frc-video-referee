@@ -15,6 +15,8 @@
         blue_score_summary: ScoreSummary;
         teams: TeamTable;
         swap: boolean;
+        reef_level_rp_threshold: number;
+        barge_rp_threshold: number;
     }
     let {
         hide_scores,
@@ -24,6 +26,8 @@
         blue_score_summary,
         teams,
         swap,
+        reef_level_rp_threshold,
+        barge_rp_threshold,
     }: Props = $props();
 
     let hide_rp = $state(true);
@@ -45,6 +49,8 @@
         toggle_final_score={() => (hide_final_score = !hide_final_score)}
         toggle_rp={() => (hide_rp = !hide_rp)}
         final_score_on_right={!swap}
+        {reef_level_rp_threshold}
+        {barge_rp_threshold}
     />
     <AllianceScoreCard
         is_blue={false}
@@ -60,6 +66,8 @@
         toggle_final_score={() => (hide_final_score = !hide_final_score)}
         toggle_rp={() => (hide_rp = !hide_rp)}
         final_score_on_right={swap}
+        {reef_level_rp_threshold}
+        {barge_rp_threshold}
     />
 </div>
 

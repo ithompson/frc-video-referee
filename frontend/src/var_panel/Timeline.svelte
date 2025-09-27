@@ -19,7 +19,6 @@
         $props();
 
     const num_ticks = 100000;
-    let fps = 59.94;
     let scoring_capture_sec = 5;
 
     const auto_start_time = match_timing.warmup_duration_sec;
@@ -29,22 +28,22 @@
         teleop_start_time + match_timing.teleop_duration_sec;
     const total_recording_duration = teleop_end_time + scoring_capture_sec;
 
-    let total_time = total_recording_duration * fps; // Total time in frames for the clip
+    let ticks_per_second = num_ticks / total_recording_duration;
 
     let periods = [
         {
             name: "auto",
-            start: auto_start_time * fps,
-            end: auto_end_time * fps,
+            start: auto_start_time * ticks_per_second,
+            end: auto_end_time * ticks_per_second,
         },
         {
             name: "teleop",
-            start: teleop_start_time * fps,
-            end: teleop_end_time * fps,
+            start: teleop_start_time * ticks_per_second,
+            end: teleop_end_time * ticks_per_second,
         },
     ];
 
-    let timeline_pos = $derived(currentTime * fps);
+    let timeline_pos = $derived(currentTime * ticks_per_second);
 
     function handlePointClick(mouseEvent: MouseEvent) {
         const target = mouseEvent.currentTarget as HTMLButtonElement;
@@ -52,13 +51,13 @@
         const event = events.find((e) => e.event_idx === event_idx)!.event;
 
         warpToEvent?.(event);
-        timeline_pos = event.time * fps;
+        timeline_pos = event.time * ticks_per_second;
     }
 
     function handleSliderChange(event: Event) {
         const target = event.target as HTMLInputElement;
-        const timeInFrames = parseInt(target.value, 10);
-        const timeInSeconds = timeInFrames / fps;
+        const timeInTicks = parseInt(target.value, 10);
+        const timeInSeconds = timeInTicks / ticks_per_second;
 
         warpToTime?.(timeInSeconds);
     }
@@ -67,8 +66,9 @@
 {#snippet timelinePoint(event: EventWithIdx)}
     <button
         class="point-wrap"
-        style="left: calc(((100% - 20px) * {(event.event.time * fps) /
-            total_time}));"
+        style="left: calc(((100% - 20px) * {(event.event.time *
+            ticks_per_second) /
+            num_ticks}));"
         onclick={handlePointClick}
         data-event-idx={event.event_idx}
     >
@@ -87,8 +87,8 @@
     <div
         class="slider-period {name}"
         style="left: calc((100% - 20px) * {start /
-            total_time} + 10px); width: calc((100% - 20px) * {(end - start) /
-            total_time});"
+            num_ticks} + 10px); width: calc((100% - 20px) * {(end - start) /
+            num_ticks});"
     ></div>
 {/snippet}
 
@@ -105,7 +105,7 @@
         <input
             type="range"
             min="0"
-            max={total_time - 1}
+            max={num_ticks - 1}
             class="slider"
             bind:value={timeline_pos}
             oninput={handleSliderChange}

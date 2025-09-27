@@ -2,9 +2,6 @@
     import reef_pole from "../assets/mini_reef_pole.svg";
     import { EndgameStatus, type Score, type ScoreSummary } from "../lib/model";
 
-    let reef_level_rp_threshold = 5;
-    let barge_rp_threshold = 14;
-
     interface Props {
         is_blue: boolean;
         score: Score;
@@ -15,6 +12,8 @@
         toggle_rp?: () => void;
         toggle_final_score?: () => void;
         final_score_on_right: boolean;
+        reef_level_rp_threshold: number;
+        barge_rp_threshold: number;
     }
     let {
         is_blue,
@@ -26,6 +25,8 @@
         toggle_rp,
         toggle_final_score,
         final_score_on_right,
+        reef_level_rp_threshold,
+        barge_rp_threshold,
     }: Props = $props();
 
     let l1_total = $derived(score.reef.trough_near + score.reef.trough_far);

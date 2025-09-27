@@ -248,8 +248,10 @@ class VARController:
         """Get the current match time in seconds."""
         if self._current_match is None:
             return 0.0
+        # TODO: Clean this up to anchor events to match start rather than recorder start
         time_seconds = (
-            datetime.now().astimezone() - self._current_match.var_data.timestamp
+            datetime.now().astimezone()
+            - self._current_match.var_data.recording_start_timestamp
         ).total_seconds()
         return max(0.0, time_seconds)
 
@@ -413,6 +415,7 @@ class VARController:
     async def _handle_match_start(self):
         """Handle a notification that a match has started"""
         async with self._lock:
+            match_timestamp = datetime.now().astimezone()
             await self._save_and_unload_current_match(update_hyperdeck=False)
             self._set_state(ControllerState.Recording)
 
@@ -422,9 +425,9 @@ class VARController:
             clip_id = await self._hyperdeck.start_recording(recording_name)
             logger.debug(f"HyperDeck clip ID: {clip_id} with filename {recording_name}")
 
-            match_timestamp = datetime.now().astimezone()
+            recording_timestamp = datetime.now().astimezone()
             logger.info(
-                f"Started recording of match {match_id} at {match_timestamp.isoformat()}"
+                f"Started recording of match {match_id} at {recording_timestamp.isoformat()}"
             )
 
             match_teams = {
@@ -445,7 +448,8 @@ class VARController:
                     var_id=match_id,
                     arena_id=self._arena.match_data.match_info.id,
                     clip_file_name=recording_name,
-                    timestamp=match_timestamp,
+                    match_start_timestamp=match_timestamp,
+                    recording_start_timestamp=recording_timestamp,
                     teams=match_teams,
                 ),
                 arena_data=self._arena.match_results.get(
