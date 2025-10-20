@@ -57,6 +57,9 @@ class VARSettings(BaseModel):
     recording_extra_time: float = 2.0
     """Extra time in seconds after endgame scoring to keep the recording running"""
 
+    match_number_digits: int = 2
+    """Minimum number of digits to use for match numbers in recording filenames"""
+
 
 class ControllerState(enum.Enum):
     Idle = enum.auto()
@@ -226,9 +229,13 @@ class VARController:
         arena_match = self._arena.match_data
         match_base_name = arena_match.match_info.short_name
         
-        # Pad numbers in the match name to at least 2 digits for better alphabetization
-        # Examples: "Q1" -> "Q01", "Q12" -> "Q12", "P3" -> "P03", "SF1" -> "SF01"
-        match_base_name = re.sub(r'(\d+)', lambda m: m.group(1).zfill(2), match_base_name)
+        # Pad numbers in the match name to at least N digits for better alphabetization
+        # Examples with 2 digits: "Q1" -> "Q01", "Q12" -> "Q12", "P3" -> "P03", "SF1" -> "SF01"
+        match_base_name = re.sub(
+            r'(\d+)', 
+            lambda m: m.group(1).zfill(self._settings.match_number_digits), 
+            match_base_name
+        )
         
         if arena_match.is_replay:
             match_base_name += "_replay"
