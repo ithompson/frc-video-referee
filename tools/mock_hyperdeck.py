@@ -17,6 +17,7 @@ docs/Blackmagic_API_subset.md.
 import json
 import random
 import time
+from dataclasses import dataclass
 from typing import Dict, List, Optional, Set
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -86,6 +87,16 @@ class WebSocketRequest(BaseModel):
     id: Optional[int] = None
 
 
+@dataclass
+class PendingFinalization:
+    """Data structure for pending clip finalization."""
+    frameCount: int
+    durationTimecode: str
+    fileSize: int
+    timeline_frameCount: int
+    finalization_time: float
+
+
 # Mock State Management
 class MockHyperDeckState:
     def __init__(self):
@@ -102,7 +113,7 @@ class MockHyperDeckState:
         self.clip_index = 0
         self.subscribers: Dict[str, Set[WebSocket]] = {}
         self.clip_start_time: float = time.time()
-        self._pending_finalization: Optional[Dict] = None
+        self._pending_finalization: Optional[PendingFinalization] = None
         """Pending finalization data including finalization time"""
 
     def set_transport_mode(self, mode: str):
@@ -134,7 +145,7 @@ class MockHyperDeckState:
         """Check if the current clip has been finalized (simulation of delay)"""
         if self._pending_finalization is None:
             return True
-        return time.time() >= self._pending_finalization["finalization_time"]
+        return time.time() >= self._pending_finalization.finalization_time
 
     def _frames_to_timecode(self, frames: int, fps: float = 60.0) -> str:
         """Convert frame number to timecode string."""
@@ -203,13 +214,13 @@ class MockHyperDeckState:
                 current_clip.fileSize = 0
                 
                 # Store the final values to apply later
-                self._pending_finalization = {
-                    "frameCount": final_frames,
-                    "durationTimecode": self._frames_to_timecode(final_frames),
-                    "fileSize": 2500000,
-                    "timeline_frameCount": final_frames,
-                    "finalization_time": time.time() + finalization_delay,
-                }
+                self._pending_finalization = PendingFinalization(
+                    frameCount=final_frames,
+                    durationTimecode=self._frames_to_timecode(final_frames),
+                    fileSize=2500000,
+                    timeline_frameCount=final_frames,
+                    finalization_time=time.time() + finalization_delay,
+                )
             else:
                 # Finalize immediately
                 current_clip.frameCount = final_frames
@@ -232,14 +243,14 @@ class MockHyperDeckState:
             current_clip = self.current_clip
             if current_clip:
                 # Apply the pending finalization
-                current_clip.frameCount = self._pending_finalization["frameCount"]
-                current_clip.durationTimecode = self._pending_finalization["durationTimecode"]
-                current_clip.fileSize = self._pending_finalization["fileSize"]
+                current_clip.frameCount = self._pending_finalization.frameCount
+                current_clip.durationTimecode = self._pending_finalization.durationTimecode
+                current_clip.fileSize = self._pending_finalization.fileSize
                 
                 # Update the timeline clip
                 if self.timeline_clips:
                     timeline_clip = self.timeline_clips[-1]
-                    timeline_clip.frameCount = self._pending_finalization["timeline_frameCount"]
+                    timeline_clip.frameCount = self._pending_finalization.timeline_frameCount
                     timeline_clip.durationTimecode = current_clip.durationTimecode
                 
                 self._pending_finalization = None
