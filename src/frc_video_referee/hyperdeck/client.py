@@ -33,6 +33,10 @@ logger = logging.getLogger(__name__)
 
 class HyperdeckClientSettings(BaseModel):
     address: str = "localhost:8001"
+    clip_finalize_poll_interval: float = 0.25
+    """Interval in seconds between polling attempts when waiting for clip to finalize after recording stops"""
+    clip_finalize_timeout: float = 5.0
+    """Maximum time in seconds to wait for clip to finalize after recording stops"""
 
 
 class HyperdeckNotifier(enum.Enum):
@@ -213,17 +217,41 @@ class HyperdeckClient:
         response.raise_for_status()
         logger.info("Stopped recording")
 
-        await asyncio.sleep(0.5)  # Give HyperDeck time to finalize the clip
+        # Poll the clip endpoint until the HyperDeck finalizes the recording
+        # and populates clipUniqueId and frameCount fields
+        start_time = asyncio.get_event_loop().time()
+        while True:
+            elapsed = asyncio.get_event_loop().time() - start_time
+            if elapsed >= self._settings.clip_finalize_timeout:
+                raise TimeoutError(
+                    f"Timed out after {self._settings.clip_finalize_timeout}s waiting for clip to finalize"
+                )
 
-        # Refresh the clip's metadata now that the recording has stopped
-        response = await self._client.get("/transports/0/clip")
-        response.raise_for_status()
-        clip_data = ClipResponse.model_validate_json(response.text)
-        assert clip_data.clip is not None, "Clip data should not be None"
-        logger.info(f"Stopped recording clip, ID is {clip_data.clip.clipUniqueId}")
-        self._clips[clip_data.clip.clipUniqueId] = clip_data.clip
-        await self._notify(HyperdeckNotifier.CLIP_LIST_UPDATED)
-        return clip_data.clip.clipUniqueId
+            # Refresh the clip's metadata
+            response = await self._client.get("/transports/0/clip")
+            response.raise_for_status()
+            
+            try:
+                clip_data = ClipResponse.model_validate_json(response.text)
+                # Check if the clip has been finalized
+                if clip_data.clip is not None:
+                    clip_id = clip_data.clip.clipUniqueId
+                    frame_count = clip_data.clip.frameCount
+                    logger.info(
+                        f"Stopped recording clip, ID is {clip_id} with {frame_count} frames"
+                    )
+                    self._clips[clip_id] = clip_data.clip
+                    await self._notify(HyperdeckNotifier.CLIP_LIST_UPDATED)
+                    return clip_id
+            except Exception:
+                # Validation error - clip not yet finalized, continue polling
+                logger.debug(
+                    f"Clip not yet finalized after {elapsed:.2f}s, retrying..."
+                )
+                pass
+
+            # Wait before polling again
+            await asyncio.sleep(self._settings.clip_finalize_poll_interval)
 
     def _get_timeline_position(self, clip_id: int, time_frames: int) -> int:
         """Get the timeline position for a specific clip and time frame."""
