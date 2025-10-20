@@ -3,6 +3,9 @@ export default class WebSocketClient {
     #address: string;
     #subscriptions: Partial<Record<string, (data: any) => void>> = {};
     #enabled: boolean = false;
+    #pingInterval: number | null = null;
+    #pingTimeout: number | null = null;
+    #waitingForPong: boolean = false;
 
     state = $state({
         connected: false,
@@ -26,6 +29,7 @@ export default class WebSocketClient {
 
     public disable() {
         this.#enabled = false;
+        this.#stopKeepalive();
         if (this.#ws) {
             this.#ws.close();
             this.#ws = null;
@@ -45,6 +49,7 @@ export default class WebSocketClient {
             console.log('WebSocket connection established');
             this.state.connected = true;
             this.#ws?.send(JSON.stringify({ type: 'subscribe', event_types: Object.keys(this.#subscriptions) }));
+            this.#startKeepalive();
         }
 
         this.#ws.onmessage = (event) => {
@@ -69,6 +74,9 @@ export default class WebSocketClient {
             } else if (msg.type === 'reload') {
                 console.log('Server requested reload');
                 window.location.reload();
+            } else if (msg.type === 'pong') {
+                console.log('Received pong response');
+                this.#handlePong();
             }
         }
 
@@ -76,6 +84,7 @@ export default class WebSocketClient {
             console.log('Server connection lost, reconnecting...')
             this.state.connected = false;
             this.#ws = null;
+            this.#stopKeepalive();
             setTimeout(() => {
                 this.connect();
             }, 3000); // Reconnect after 3 seconds
@@ -94,5 +103,56 @@ export default class WebSocketClient {
             data: data,
         }
         this.#ws?.send(JSON.stringify(message));
+    }
+
+    #startKeepalive() {
+        // Send a ping every 30 seconds
+        this.#pingInterval = window.setInterval(() => {
+            this.#sendPing();
+        }, 30000);
+    }
+
+    #stopKeepalive() {
+        if (this.#pingInterval !== null) {
+            clearInterval(this.#pingInterval);
+            this.#pingInterval = null;
+        }
+        if (this.#pingTimeout !== null) {
+            clearTimeout(this.#pingTimeout);
+            this.#pingTimeout = null;
+        }
+        this.#waitingForPong = false;
+    }
+
+    #sendPing() {
+        if (this.#waitingForPong) {
+            // Server didn't respond to previous ping, close connection
+            console.error('Server not responding to keepalive pings, closing connection');
+            this.#ws?.close();
+            return;
+        }
+
+        const ping = {
+            type: 'ping',
+            timestamp: Date.now(),
+        };
+        this.#ws?.send(JSON.stringify(ping));
+        this.#waitingForPong = true;
+
+        // Set timeout for pong response (10 seconds)
+        this.#pingTimeout = window.setTimeout(() => {
+            if (this.#waitingForPong) {
+                console.error('No pong response received, closing connection');
+                this.#ws?.close();
+            }
+        }, 10000);
+    }
+
+    #handlePong() {
+        this.#waitingForPong = false;
+        if (this.#pingTimeout !== null) {
+            clearTimeout(this.#pingTimeout);
+            this.#pingTimeout = null;
+        }
     }
 }
