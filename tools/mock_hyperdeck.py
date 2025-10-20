@@ -15,6 +15,7 @@ docs/Blackmagic_API_subset.md.
 """
 
 import json
+import random
 import time
 from typing import Dict, List, Optional, Set
 
@@ -101,8 +102,8 @@ class MockHyperDeckState:
         self.clip_index = 0
         self.subscribers: Dict[str, Set[WebSocket]] = {}
         self.clip_start_time: float = time.time()
-        self.clip_finalization_time: Optional[float] = None
-        """Time when clip finalization will be complete (simulates delay in finalizing)"""
+        self._pending_finalization: Optional[Dict] = None
+        """Pending finalization data including finalization time"""
 
     def set_transport_mode(self, mode: str):
         """Set the transport mode."""
@@ -131,9 +132,9 @@ class MockHyperDeckState:
     @property
     def is_clip_finalized(self) -> bool:
         """Check if the current clip has been finalized (simulation of delay)"""
-        if self.clip_finalization_time is None:
+        if self._pending_finalization is None:
             return True
-        return time.time() >= self.clip_finalization_time
+        return time.time() >= self._pending_finalization["finalization_time"]
 
     def _frames_to_timecode(self, frames: int, fps: float = 60.0) -> str:
         """Convert frame number to timecode string."""
@@ -207,8 +208,8 @@ class MockHyperDeckState:
                     "durationTimecode": self._frames_to_timecode(final_frames),
                     "fileSize": 2500000,
                     "timeline_frameCount": final_frames,
+                    "finalization_time": time.time() + finalization_delay,
                 }
-                self.clip_finalization_time = time.time() + finalization_delay
             else:
                 # Finalize immediately
                 current_clip.frameCount = final_frames
@@ -221,15 +222,15 @@ class MockHyperDeckState:
                     timeline_clip.frameCount = final_frames
                     timeline_clip.durationTimecode = current_clip.durationTimecode
                 
-                self.clip_finalization_time = None
+                self._pending_finalization = None
 
         self.set_transport_mode("InputPreview")
     
     def finalize_clip_if_ready(self) -> None:
         """Finalize the clip if finalization delay has elapsed"""
-        if self.clip_finalization_time is not None and self.is_clip_finalized:
+        if self._pending_finalization is not None and self.is_clip_finalized:
             current_clip = self.current_clip
-            if current_clip and hasattr(self, "_pending_finalization"):
+            if current_clip:
                 # Apply the pending finalization
                 current_clip.frameCount = self._pending_finalization["frameCount"]
                 current_clip.durationTimecode = self._pending_finalization["durationTimecode"]
@@ -241,8 +242,7 @@ class MockHyperDeckState:
                     timeline_clip.frameCount = self._pending_finalization["timeline_frameCount"]
                     timeline_clip.durationTimecode = current_clip.durationTimecode
                 
-                delattr(self, "_pending_finalization")
-                self.clip_finalization_time = None
+                self._pending_finalization = None
 
     def set_playback(self, config: PlaybackRequest) -> None:
         """Set playback configuration."""
@@ -350,7 +350,6 @@ async def stop_transport():
     """Stop a recording session."""
     if mock_state.recording:
         # Simulate variable finalization delay (0.5-1.5 seconds)
-        import random
         finalization_delay = random.uniform(0.5, 1.5)
         mock_state.stop_recording(finalization_delay=finalization_delay)
         await mock_state.notify_property_changed("/transports/0")
@@ -402,6 +401,9 @@ async def get_current_clip():
 @app.get("/control/api/v1/clips")
 async def get_all_clips():
     """Get information about all stored clips."""
+    # Check if clip should be finalized
+    mock_state.finalize_clip_if_ready()
+    
     return {"clips": [clip.model_dump() for clip in mock_state.clips]}
 
 

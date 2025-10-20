@@ -3,7 +3,7 @@ import enum
 import logging
 from typing import Awaitable, Callable, Dict, List
 import httpx
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 import websockets
 
 from frc_video_referee.hyperdeck.model import (
@@ -233,6 +233,12 @@ class HyperdeckClient:
             
             try:
                 clip_data = ClipResponse.model_validate_json(response.text)
+            except ValidationError:
+                # Validation error - clip not yet finalized, continue polling
+                logger.debug(
+                    f"Clip not yet finalized after {elapsed:.2f}s, retrying..."
+                )
+            else:
                 # Check if the clip has been finalized
                 if clip_data.clip is not None:
                     clip_id = clip_data.clip.clipUniqueId
@@ -243,12 +249,6 @@ class HyperdeckClient:
                     self._clips[clip_id] = clip_data.clip
                     await self._notify(HyperdeckNotifier.CLIP_LIST_UPDATED)
                     return clip_id
-            except Exception:
-                # Validation error - clip not yet finalized, continue polling
-                logger.debug(
-                    f"Clip not yet finalized after {elapsed:.2f}s, retrying..."
-                )
-                pass
 
             # Wait before polling again
             await asyncio.sleep(self._settings.clip_finalize_poll_interval)
