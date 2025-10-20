@@ -1,6 +1,7 @@
 import asyncio
 import enum
 import logging
+import re
 from datetime import datetime
 from typing import List
 import uuid
@@ -224,6 +225,11 @@ class VARController:
         """Generate an ID for the current match based on arena data."""
         arena_match = self._arena.match_data
         match_base_name = arena_match.match_info.short_name
+        
+        # Pad numbers in the match name to at least 2 digits for better alphabetization
+        # Examples: "Q1" -> "Q01", "Q12" -> "Q12", "P3" -> "P03", "SF1" -> "SF01"
+        match_base_name = re.sub(r'(\d+)', lambda m: m.group(1).zfill(2), match_base_name)
+        
         if arena_match.is_replay:
             match_base_name += "_replay"
 
