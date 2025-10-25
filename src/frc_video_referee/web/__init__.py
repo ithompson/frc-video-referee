@@ -18,6 +18,8 @@ from frc_video_referee.web.model import (
     InboundWebsocketMessage,
     WebsocketCommand,
     WebsocketEvent,
+    WebsocketPing,
+    WebsocketPong,
     WebsocketSubscribeRequest,
     WebsocketSubscribeResponse,
     WebsocketUnsubscribeRequest,
@@ -211,6 +213,13 @@ class WebsocketManager:
                                 f"Error handling command '{command_name}': {e}"
                             )
                             continue
+                    case WebsocketPing():
+                        # Respond to keepalive ping with pong
+                        logger.debug("Received ping, responding with pong")
+                        pong = WebsocketPong(timestamp=msg.timestamp)
+                        await websocket.send_text(
+                            pong.model_dump_json(exclude_none=True)
+                        )
         finally:
             logger.info(f"WebSocket client 0x{id(websocket):x} disconnected")
             self._clients.discard(websocket)

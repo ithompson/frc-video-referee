@@ -100,9 +100,27 @@ class WebsocketCommand(BaseModel):
     """Data associated with the command request, serialized as a dictionary"""
 
 
+class WebsocketPing(BaseModel):
+    """Request model for keepalive ping"""
+
+    type: Literal["ping"] = "ping"
+    """Type of the message, always 'ping' for ping requests"""
+    timestamp: float | None = None
+    """Optional timestamp for tracking round-trip time"""
+
+
+class WebsocketPong(BaseModel):
+    """Response model for keepalive pong"""
+
+    type: Literal["pong"] = "pong"
+    """Type of the message, always 'pong' for pong responses"""
+    timestamp: float | None = None
+    """Optional timestamp echoed from the ping request"""
+
+
 InboundWebsocketMessage = TypeAdapter(
-    WebsocketSubscribeRequest | WebsocketUnsubscribeRequest | WebsocketCommand
+    WebsocketSubscribeRequest | WebsocketUnsubscribeRequest | WebsocketCommand | WebsocketPing
 )
 OutboundWebsocketMessage = TypeAdapter(
-    WebsocketEvent | WebsocketSubscribeResponse | WebsocketUnsubscribeResponse
+    WebsocketEvent | WebsocketSubscribeResponse | WebsocketUnsubscribeResponse | WebsocketPong
 )
