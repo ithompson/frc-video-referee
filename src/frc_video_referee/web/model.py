@@ -119,8 +119,14 @@ class WebsocketPong(BaseModel):
 
 
 InboundWebsocketMessage = TypeAdapter(
-    WebsocketSubscribeRequest | WebsocketUnsubscribeRequest | WebsocketCommand | WebsocketPing
+    WebsocketSubscribeRequest
+    | WebsocketUnsubscribeRequest
+    | WebsocketCommand
+    | WebsocketPing
 )
 OutboundWebsocketMessage = TypeAdapter(
-    WebsocketEvent | WebsocketSubscribeResponse | WebsocketUnsubscribeResponse | WebsocketPong
+    WebsocketEvent
+    | WebsocketSubscribeResponse
+    | WebsocketUnsubscribeResponse
+    | WebsocketPong
 )

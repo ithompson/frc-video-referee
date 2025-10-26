@@ -228,15 +228,15 @@ class VARController:
         """Generate an ID for the current match based on arena data."""
         arena_match = self._arena.match_data
         match_base_name = arena_match.match_info.short_name
-        
+
         # Pad numbers in the match name to at least N digits for better alphabetization
         # Examples with 2 digits: "Q1" -> "Q01", "Q12" -> "Q12", "P3" -> "P03", "SF1" -> "SF01"
         match_base_name = re.sub(
-            r'(\d+)', 
-            lambda m: m.group(1).zfill(self._settings.match_number_digits), 
-            match_base_name
+            r"(\d+)",
+            lambda m: m.group(1).zfill(self._settings.match_number_digits),
+            match_base_name,
         )
-        
+
         if arena_match.is_replay:
             match_base_name += "_replay"
 
@@ -655,6 +655,18 @@ class VARController:
             if clip_id and self._hyperdeck.has_playable_clip(clip_id):
                 await self._hyperdeck.warp_to_clip(clip_id, command.time)
 
+    async def _internal_add_var_review(self, event_type: MatchEventType, time: float):
+        """Internal method to add an event to the current match."""
+        if self._current_match is None:
+            return
+        event = MatchEvent(
+            event_id=self._create_event_id(),
+            event_type=event_type,
+            time=time,
+        )
+        self._add_match_event(event)
+        await self._websocket.notify(MATCH_LIST_EVENT)
+
     async def _handle_add_var_review_command(self, command: AddVARReviewCommand):
         """Handle a command to add a VAR review event to the current match."""
         async with self._lock:
@@ -665,13 +677,16 @@ class VARController:
                     f"Cannot add VAR review event for match {command.match_id} when current match is {self._current_match.var_data.var_id}"
                 )
                 return
-            event = MatchEvent(
-                event_id=self._create_event_id(),
-                event_type=MatchEventType.VAR_REVIEW,
-                time=command.time,
+            await self._internal_add_var_review(MatchEventType.VAR_REVIEW, command.time)
+
+    async def external_add_var_review(self):
+        """Handle an external request to add a VAR review event at the current time."""
+        async with self._lock:
+            if self._state != ControllerState.Recording:
+                return
+            await self._internal_add_var_review(
+                MatchEventType.HR_REVIEW, self._get_current_match_time()
             )
-            self._add_match_event(event)
-            await self._websocket.notify(MATCH_LIST_EVENT)
 
     async def _handle_exit_review_command(self, _command: ExitReviewCommand):
         """Handle a command to exit review mode and go to the live view."""

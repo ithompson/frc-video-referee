@@ -12,7 +12,13 @@ from .db import DB, DBSettings
 from .controller import VARController, VARSettings
 from .cheesy_arena.client import CheesyArenaClient, ArenaClientSettings
 from .hyperdeck.client import HyperdeckClient, HyperdeckClientSettings
-from .web import ServerSettings, WEBSOCKET_MANAGER, UISettings, run as run_server
+from .web import (
+    ServerSettings,
+    WEBSOCKET_MANAGER,
+    UISettings,
+    register_controller_to_web,
+    run as run_server,
+)
 from .utils import ExitServer
 
 
@@ -94,7 +100,8 @@ async def async_main(settings: Settings) -> None:
     websocket = WEBSOCKET_MANAGER
     await websocket.set_ui_settings(settings.ui)
 
-    _controller = VARController(settings.var, arena, hyperdeck, websocket, db)
+    controller = VARController(settings.var, arena, hyperdeck, websocket, db)
+    register_controller_to_web(controller)
 
     try:
         async with asyncio.TaskGroup() as tg:

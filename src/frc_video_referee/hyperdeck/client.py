@@ -230,7 +230,7 @@ class HyperdeckClient:
             # Refresh the clip's metadata
             response = await self._client.get("/transports/0/clip")
             response.raise_for_status()
-            
+
             try:
                 clip_data = ClipResponse.model_validate_json(response.text)
             except ValidationError:

@@ -90,6 +90,7 @@ class WebSocketRequest(BaseModel):
 @dataclass
 class PendingFinalization:
     """Data structure for pending clip finalization."""
+
     frameCount: int
     durationTimecode: str
     fileSize: int
@@ -196,7 +197,7 @@ class MockHyperDeckState:
 
     def stop_recording(self, finalization_delay: float = 0.0) -> None:
         """Stop the recording session.
-        
+
         Args:
             finalization_delay: Delay in seconds before clip metadata is fully populated (simulates real device behavior)
         """
@@ -205,14 +206,14 @@ class MockHyperDeckState:
             # Calculate final clip metadata
             elapsed_time = time.time() - self.clip_start_time
             final_frames = int(elapsed_time * 60)  # Simulate recorded duration
-            
+
             if finalization_delay > 0:
                 # Simulate delay in finalizing the clip
                 # Set frameCount to 0 initially (will be updated once finalized)
                 current_clip.frameCount = 0
                 current_clip.durationTimecode = self._frames_to_timecode(0)
                 current_clip.fileSize = 0
-                
+
                 # Store the final values to apply later
                 self._pending_finalization = PendingFinalization(
                     frameCount=final_frames,
@@ -226,17 +227,17 @@ class MockHyperDeckState:
                 current_clip.frameCount = final_frames
                 current_clip.durationTimecode = self._frames_to_timecode(final_frames)
                 current_clip.fileSize = 2500000
-                
+
                 # Update the timeline clip
                 if self.timeline_clips:
                     timeline_clip = self.timeline_clips[-1]
                     timeline_clip.frameCount = final_frames
                     timeline_clip.durationTimecode = current_clip.durationTimecode
-                
+
                 self._pending_finalization = None
 
         self.set_transport_mode("InputPreview")
-    
+
     def finalize_clip_if_ready(self) -> None:
         """Finalize the clip if finalization delay has elapsed"""
         if self._pending_finalization is not None and self.is_clip_finalized:
@@ -244,15 +245,19 @@ class MockHyperDeckState:
             if current_clip:
                 # Apply the pending finalization
                 current_clip.frameCount = self._pending_finalization.frameCount
-                current_clip.durationTimecode = self._pending_finalization.durationTimecode
+                current_clip.durationTimecode = (
+                    self._pending_finalization.durationTimecode
+                )
                 current_clip.fileSize = self._pending_finalization.fileSize
-                
+
                 # Update the timeline clip
                 if self.timeline_clips:
                     timeline_clip = self.timeline_clips[-1]
-                    timeline_clip.frameCount = self._pending_finalization.timeline_frameCount
+                    timeline_clip.frameCount = (
+                        self._pending_finalization.timeline_frameCount
+                    )
                     timeline_clip.durationTimecode = current_clip.durationTimecode
-                
+
                 self._pending_finalization = None
 
     def set_playback(self, config: PlaybackRequest) -> None:
@@ -392,7 +397,7 @@ async def get_current_clip():
     """Get information about the current clip."""
     # Check if clip should be finalized
     mock_state.finalize_clip_if_ready()
-    
+
     clip = mock_state.current_clip
     if clip:
         # If clip is not finalized yet, return it without frameCount and clipUniqueId
@@ -414,7 +419,7 @@ async def get_all_clips():
     """Get information about all stored clips."""
     # Check if clip should be finalized
     mock_state.finalize_clip_if_ready()
-    
+
     return {"clips": [clip.model_dump() for clip in mock_state.clips]}
 
 

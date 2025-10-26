@@ -11,6 +11,7 @@ from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconn
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from pydantic import BaseModel, ValidationError
 
@@ -228,6 +229,13 @@ class WebsocketManager:
 
 
 WEBSOCKET_MANAGER = WebsocketManager(UISettings())
+CONTROLLER = None
+
+
+def register_controller_to_web(controller) -> None:
+    global CONTROLLER
+    CONTROLLER = controller
+
 
 # Simple password-based authentication
 security = HTTPBasic()
@@ -280,6 +288,14 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Set up static files
 static_dir = get_static_directory()
 app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
@@ -303,6 +319,14 @@ async def reload_clients():
     """Request all clients to reload their pages"""
     await WEBSOCKET_MANAGER.reload_clients()
     return {"status": "reload requested"}
+
+
+@app.post("/api/add_review")
+async def add_review():
+    """Simulate a press of the VAR add review button"""
+    assert CONTROLLER is not None
+    await CONTROLLER.external_add_var_review()
+    return {"status": "Review added"}
 
 
 @app.websocket("/api/websocket")
