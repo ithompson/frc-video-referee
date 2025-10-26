@@ -57,6 +57,9 @@ class VARSettings(BaseModel):
     recording_extra_time: float = 2.0
     """Extra time in seconds after endgame scoring to keep the recording running"""
 
+    var_review_backdate_time: float = 0.0
+    """Amount of time to backdate VAR review button presses during a match"""
+
 
 class ControllerState(enum.Enum):
     Idle = enum.auto()
@@ -148,6 +151,10 @@ class VARController:
             (
                 HyperdeckNotifier.CLIP_LIST_UPDATED,
                 self._handle_hyperdeck_clip_list_update,
+            ),
+            (
+                HyperdeckNotifier.DISK_SPACE_UPDATED,
+                self._handle_hyperdeck_disk_space_update,
             ),
         ]
         for event, handler in hyperdeck_subscriptions:
@@ -551,10 +558,14 @@ class VARController:
                 self._current_match.var_data.clip_id
             )
         playing = self._hyperdeck.playback_state.type == PlaybackType.Play
+        active_working_set = self._hyperdeck.get_active_working_set()
         return HyperdeckStatus(
             transport_mode=self._hyperdeck.transport_mode,
             playing=playing,
             clip_time=clip_time,
+            remaining_record_time=active_working_set.remainingRecordTime,
+            total_space=active_working_set.totalSpace,
+            remaining_space=active_working_set.remainingSpace,
         ).model_dump()
 
     ###############################################
@@ -608,6 +619,10 @@ class VARController:
         self._refresh_hyperdeck_clip_presence()
         await self._websocket.notify(MATCH_LIST_EVENT)
 
+    async def _handle_hyperdeck_disk_space_update(self):
+        """Handle a notification that the HyperDeck disk space information has changed"""
+        await self._websocket.notify(HYPERDECK_STATUS_EVENT)
+
     #########################################
     # Handlers for commands from the VAR UI #
     #########################################
@@ -658,10 +673,15 @@ class VARController:
                     f"Cannot add VAR review event for match {command.match_id} when current match is {self._current_match.var_data.var_id}"
                 )
                 return
+            if self._state == ControllerState.Recording:
+                # Backdate the event time a bit to account for human reaction times
+                event_time = max(0.0, command.time - self._settings.var_review_backdate_time)
+            else:
+                event_time = command.time
             event = MatchEvent(
                 event_id=self._create_event_id(),
                 event_type=MatchEventType.VAR_REVIEW,
-                time=command.time,
+                time=event_time,
             )
             self._add_match_event(event)
             await self._websocket.notify(MATCH_LIST_EVENT)
